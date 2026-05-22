@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INFO 698 // Documentation</title>
+    <!-- Favicon set (mirrors splash; ../ prefix because we're in /pages/). -->
+  <link rel="icon"             href="../assets/favicon/favicon.svg" type="image/svg+xml" />
+  <link rel="icon"             href="../assets/favicon/favicon.ico" sizes="any" />
+  <link rel="icon"             href="../assets/favicon/favicon-32.png"  type="image/png" sizes="32x32" />
+  <link rel="icon"             href="../assets/favicon/favicon-16.png"  type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="../assets/favicon/favicon-180.png" sizes="180x180" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="stylesheet" href="../css/ares.css" />
+</head>
+<body>
+
+  <div class="ares-substrate" aria-hidden="true"></div>
+  <div class="ares-edge-top" aria-hidden="true"></div>
+  <div class="ares-edge-bot" aria-hidden="true"></div>
+
+  <div class="ares-hud ares-hud--top">
+    <span><span class="ares-pulse"></span>NODE_VAULT // DOC</span>
+    <span class="ares-muted">INFO_698 // SECTION</span>
+  </div>
+
+  <main class="ares-page">
+
+    <a href="../nav.html" class="ares-back">
+      <span>&lt;&lt;</span> RETURN TO CONSOLE
+    </a>
+
+    <div class="ares-label">// SECTION DOC</div>
+    <h1 id="page-title">Documentation</h1>
+
+    <div class="ares-card ares-frame" id="content-mount">
+      <span class="ares-corner-bl"></span><span class="ares-corner-br"></span>
+      <p class="ares-muted ares-mono" style="font-size:11px; letter-spacing:0.2em;">
+        [ LOADING // DOCS ]
+      </p>
+    </div>
+
+  </main>
+
+  <div class="ares-hud ares-hud--bot">
+    <span>v0.1.0 // PROTOTYPE</span>
+    <span>HELIX_STACK // ACTIVE</span>
+  </div>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" />
+
+  <script src="../js/data-loader.js"></script>
+  <script>
+    AresData.load('content.json').then(function(content) {
+      var c = content['docs'] || {};
+      var mount = document.getElementById('content-mount');
+      mount.innerHTML =
+        '<span class="ares-corner-bl"></span><span class="ares-corner-br"></span>' +
+        renderSection(c);
+      if (c.title) document.getElementById('page-title').textContent = c.title;
+    }).catch(function(err) {
+      console.error(err);
+      document.getElementById('content-mount').innerHTML =
+        '<span class="ares-corner-bl"></span><span class="ares-corner-br"></span>' +
+        '<p style="color:#ff3030;">[ ERR // CONTENT LOAD FAILED ]</p>';
+    });
+
+    function renderSection(c) {
+      var html = '';
+      if (c.abstract) html += '<p>' + c.abstract + '</p>';
+      if (c.summary)  html += '<p>' + c.summary + '</p>';
+      if (c.bio)      html += '<p>' + c.bio + '</p>';
+
+      if (c.objectives && c.objectives.length) {
+        html += '<h2>Objectives</h2><ul style="line-height:1.8; padding-left:1.2em;">';
+        c.objectives.forEach(function(o) { html += '<li>' + o + '</li>'; });
+        html += '</ul>';
+      }
+      if (c.stages && c.stages.length) {
+        html += '<h2>Stages</h2><ul style="line-height:1.8; padding-left:1.2em;">';
+        c.stages.forEach(function(s) {
+          html += '<li><strong style="color:var(--ares-cyan);">' + s.name + '</strong> — ' + s.desc + '</li>';
+        });
+        html += '</ul>';
+      }
+      if (c.metrics && c.metrics.length) {
+        html += '<h2>Metrics</h2><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;">';
+        c.metrics.forEach(function(m) {
+          html += '<div style="border:1px solid rgba(0,217,255,0.3); padding:12px 16px; background:rgba(0,217,255,0.04);">' +
+                  '<div class="ares-mono ares-muted" style="font-size:10px; letter-spacing:0.2em;">' + m.label + '</div>' +
+                  '<div class="ares-mono ares-lime" style="font-size:20px; margin-top:4px;">' + m.value + '</div>' +
+                  '</div>';
+        });
+        html += '</div>';
+      }
+      if (c.affiliations && c.affiliations.length) {
+        html += '<h2>Affiliations</h2><ul style="line-height:1.8; padding-left:1.2em;">';
+        c.affiliations.forEach(function(a) { html += '<li>' + a + '</li>'; });
+        html += '</ul>';
+      }
+      if (c.items && c.items.length === 0) {
+        html += '<p class="ares-dim ares-mono" style="font-size:11px; letter-spacing:0.15em;">' +
+                '[ NO ITEMS // POPULATE data/links.json AND data/content.json ]</p>';
+      }
+      if (!html) html = '<p class="ares-muted">Placeholder. Edit <code>data/content.json</code> to populate this section.</p>';
+      return html;
+    }
+  </script>
+
+</body>
+</html>

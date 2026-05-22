@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INFO 698 // Navigation</title>
+
+  <!-- Favicon set: SVG primary (modern browsers), ICO fallback (legacy),
+       Apple touch icon (iOS home screen), PWA-sized PNGs. Mirrors the
+       splash page so the nav tab shows the same capstone pyramid mark. -->
+  <link rel="icon"             href="assets/favicon/favicon.svg" type="image/svg+xml" />
+  <link rel="icon"             href="assets/favicon/favicon.ico" sizes="any" />
+  <link rel="icon"             href="assets/favicon/favicon-32.png"  type="image/png" sizes="32x32" />
+  <link rel="icon"             href="assets/favicon/favicon-16.png"  type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/favicon/favicon-180.png" sizes="180x180" />
+  <meta name="theme-color" content="#000000" />
+
+  <link rel="stylesheet" href="css/ares.css" />
+  <!-- Folder-stack engine's own CSS (rail, count panel, sector label,
+       file inspect, access dialog). Loaded BEFORE nav-extras.css so
+       that bridge's overrides win on conflict. -->
+  <link rel="stylesheet" href="css/folder-stack.css" />
+  <!-- nav-extras.css: stage split, preview pane, token bridge between
+       the engine's --accent vars and the ares palette. -->
+  <link rel="stylesheet" href="css/nav-extras.css" />
+  <!-- Tabler icons loaded in HEAD so glyphs render on first paint instead
+       of arriving after layout. The clicker arrows below still use inline
+       SVG (no font dependency), but other ti-* icons resolve faster. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" />
+  <style>
+    /* ============================================================
+       Top-level two-column layout
+         ┌────────────────────────────┬────────────────────────────┐
+         │                            │  banner: ← return to main  │
+         │      RADIAL WHEEL          ├────────────────────────────┤
+         │      + clicker + readout   │                            │
+         │                            │  DOC FOLDERS (per subject) │
+         │                            │                            │
+         └────────────────────────────┴────────────────────────────┘
+       Below 980px the columns stack (wheel on top, docs below).
+       ============================================================ */
+    .nav-page {
+      /* Fit the page into the viewport: HUD strips take ~32px top + 32px bot,
+         leave the rest for the nav-page content. Children stretch to fill
+         the row height so the docs-side can hand its full height to the
+         folder-stack + preview split. */
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      gap: 24px;
+      padding: 38px 28px 38px;
+      position: relative;
+      z-index: 2;
+      align-items: stretch;
+    }
+    @media (max-width: 980px) {
+      .nav-page {
+        height: auto;
+        max-height: none;
+        overflow: visible;
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    /* ---------- LEFT column: wheel + clicker + readout ---------- */
+    .nav-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+    .nav-header { text-align: center; margin-bottom: 14px; }
+    .nav-header h2 {
+      font-family: var(--ares-mono);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      margin: 0;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    /* Wheel container — sized to its column. Was a fixed 680px square,
+       now responsive: fits the available column width up to a 620px cap.
+       Below 980px the column is full-width again and the wheel scales. */
+    .radial {
+      position: relative;
+      width: min(620px, 92%);
+      aspect-ratio: 1 / 1;
+    }
+    .radial-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .radial-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 28%;
+      height: 28%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radial-center-frame {
+      position: relative;
+      width: 92%;
+      height: 92%;
+      border: 1px solid rgba(0, 217, 255, 0.5);
+      background: rgba(0, 217, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .radial-center-frame img {
+      max-width: 80%;
+      max-height: 80%;
+      display: block;
+    }
+    .radial-fallback {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: var(--ares-mono);
+      font-size: 9px;
+      color: var(--ares-muted);
+      letter-spacing: 0.15em;
+    }
+
+    /* Nodes — same disc-orbit geometry, just relative to the new
+       responsive radial container. Sizes shrink modestly so the wheel
+       sits comfortably in the half-width column. */
+    .node {
+      position: absolute;
+      width: 16.2%;       /* ≈ 110/680 — same ratio as before */
+      height: 16.2%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: rgba(0,0,0,0.6);
+      font-family: var(--ares-mono);
+      cursor: pointer;
+      /* Longer left/top transition so slot rotation reads as a wheel
+         spin rather than a teleport. Hover effects stay snappy. */
+      transition: left 0.42s cubic-bezier(0.34, 1.04, 0.46, 1),
+                  top  0.42s cubic-bezier(0.34, 1.04, 0.46, 1),
+                  transform 0.18s ease,
+                  background 0.18s ease,
+                  border-color 0.18s ease,
+                  box-shadow 0.25s ease;
+      text-align: center;
+      text-decoration: none;
+    }
+    .node:hover {
+      transform: scale(1.06);
+      background: rgba(0, 217, 255, 0.08);
+    }
+    .node.is-active {
+      /* The static .wheel-highlight frame at top-of-wheel is the
+         primary affordance now; the node itself only gets a mild
+         brightening so it doesn't feel inert when it lands in the
+         frame. No scale change, no extra corner brackets (those
+         would fight the highlight's brackets at the same position). */
+      background: rgba(0, 217, 255, 0.10);
+      border: 1px solid currentColor !important;
+      box-shadow:
+        inset 0 0 12px color-mix(in srgb, currentColor 35%, transparent);
+      z-index: 3;
+    }
+    .node.is-active:hover { transform: scale(1.04); }
+    .node-icon { font-size: 22px; }
+    .node-label {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .node-id {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+    }
+
+    /* ---------- Wheel clicker ---------- */
+    .wheel-clicker {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 18px;
+      font-family: var(--ares-mono);
+      letter-spacing: 0.18em;
+    }
+    .wheel-btn {
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 217, 255, 0.06);
+      border: 1px solid rgba(0, 217, 255, 0.45);
+      color: var(--ares-cyan);
+      cursor: pointer;
+      user-select: none;
+      padding: 0;
+      transition: background 0.16s ease, border-color 0.16s ease,
+                  box-shadow 0.16s ease, transform 0.10s ease,
+                  color 0.16s ease;
+    }
+    .wheel-btn:hover {
+      background: rgba(0, 217, 255, 0.14);
+      border-color: var(--ares-cyan);
+      box-shadow: 0 0 12px rgba(0, 217, 255, 0.30);
+      color: var(--ares-lime);
+    }
+    .wheel-btn:active { transform: scale(0.94); }
+    .wheel-btn:focus-visible {
+      outline: none;
+      border-color: var(--ares-cyan);
+      box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.40);
+    }
+    /* Inline SVG chevrons inherit currentColor and scale crisply.
+       This sidesteps the icon-font race condition that left the
+       previous ti-chevron-* glyphs blank on first paint. */
+    .wheel-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: block;
+    }
+    .wheel-slot-name {
+      min-width: 200px;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.20em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+      padding: 10px 14px;
+      border: 1px solid rgba(0, 217, 255, 0.20);
+      background: rgba(0, 0, 0, 0.35);
+      text-decoration: none;
+      transition: color 0.25s ease, border-color 0.25s ease,
+                  background 0.18s ease;
+    }
+    .wheel-slot-name:hover { background: rgba(0, 217, 255, 0.06); }
+    .wheel-slot-name b { font-weight: 600; letter-spacing: 0.10em; }
+
+    .readout {
+      margin-top: 14px;
+      padding: 10px 18px;
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      background: rgba(0, 217, 255, 0.04);
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--ares-muted);
+      min-width: 340px;
+      text-align: center;
+      transition: all 0.18s ease;
+    }
+    @media (max-width: 720px) {
+      .readout { min-width: 0; width: 90vw; font-size: 10px; }
+    }
+
+    /* ============================================================
+       RIGHT column — docs pane (state-driven)
+       ------------------------------------------------------------
+       States, all rendered into #docs-stage:
+         empty    → placeholder, no subject selected
+         subject  → 3D folder grid for the clicked wheel node
+         folder   → single folder's content with back-to-grid
+         d2l      → external-link alert card
+       The right-pane sub-banner (#docs-subbanner) carries the
+       state-local back button + breadcrumb.
+       ============================================================ */
+    .docs-side {
+      /* Fill the height of the .nav-page grid cell (which is now bounded
+         to the viewport). The banner + subbanner take their natural
+         heights; the docs-stage flex-grows to fill what's left. */
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+    }
+    .docs-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border: 1px solid rgba(0, 217, 255, 0.35);
+      background: linear-gradient(90deg,
+        rgba(0, 217, 255, 0.05) 0%,
+        rgba(176, 38, 255, 0.05) 50%,
+        rgba(200, 255, 0, 0.05) 100%);
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--ares-cyan);
+      position: relative;
+    }
+    .docs-banner-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+    }
+    .docs-banner-title .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--ares-cyan);
+      box-shadow: 0 0 8px var(--ares-cyan);
+      animation: pulse-dot 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(0.75); }
+    }
+    .docs-banner-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border: 1px solid rgba(0, 217, 255, 0.35);
+      color: var(--ares-cyan);
+      text-decoration: none;
+      font-family: var(--ares-mono);
+      font-size: 10px;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      transition: background 0.16s ease, color 0.16s ease,
+                  border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    .docs-banner-back:hover {
+      background: rgba(0, 217, 255, 0.10);
+      color: var(--ares-lime);
+      border-color: var(--ares-lime);
+      box-shadow: 0 0 10px rgba(200, 255, 0, 0.25);
+    }
+    .docs-banner-back svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+      fill: none;
+    }
+
+    /* ---------- Sub-banner (within-pane navigation) ----------
+       Always rendered above the docs-stage; its content is rewritten
+       by docs-nav.js as the state changes. Empty state hides it via
+       a body-level data-state attribute. */
+    .docs-subbanner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid rgba(0, 217, 255, 0.18);
+      background: rgba(0, 0, 0, 0.30);
+      font-family: var(--ares-mono);
+      font-size: 10px;
+      letter-spacing: 0.20em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+      min-height: 36px;
+      transition: border-color 0.20s ease, color 0.20s ease;
+    }
+    .docs-subbanner-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 1px solid rgba(0, 217, 255, 0.40);
+      background: rgba(0, 217, 255, 0.06);
+      color: var(--ares-cyan);
+      cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease,
+                  color 0.14s ease, transform 0.10s ease;
+    }
+    .docs-subbanner-back:hover {
+      background: rgba(0, 217, 255, 0.16);
+      color: var(--ares-lime);
+      border-color: var(--ares-lime);
+    }
+    .docs-subbanner-back:active { transform: scale(0.92); }
+    .docs-subbanner-back:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .docs-subbanner-back svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+      fill: none;
+    }
+    .docs-subbanner-crumb {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .docs-subbanner-crumb .sep { color: var(--ares-dim); }
+    .docs-subbanner-crumb .here { color: var(--ares-cyan); }
+
+    /* ---------- Stage (state-driven content area) ----------
+       The original INFO 698 layout treated .docs-stage as a single
+       padded box with a dashed border in the empty state. mk_2's split
+       layout (folder-stack on top, preview pane below) needs an
+       UNSTYLED .docs-stage so the children own their own chrome. The
+       split layout's CSS lives in css/nav-extras.css under the
+       compound selector .docs-stage.docs-stage--split. ---------- */
+    .docs-stage {
+      position: relative;
+    }
+
+    /* Empty placeholder */
+    .docs-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 40px 18px;
+      text-align: center;
+      color: var(--ares-muted);
+      font-family: var(--ares-mono);
+    }
+    .docs-empty .lbl {
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+    }
+    .docs-empty .hint {
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--ares-dim);
+      max-width: 320px;
+      line-height: 1.6;
+    }
+    .docs-empty .glyph {
+      width: 56px; height: 56px;
+      border: 1px dashed rgba(0, 217, 255, 0.35);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ares-cyan);
+      opacity: 0.55;
+    }
+    .docs-empty .glyph svg {
+      width: 28px; height: 28px;
+      stroke: currentColor; stroke-width: 1.5;
+      stroke-linecap: round; stroke-linejoin: round;
+      fill: none;
+    }
+
+    /* ---------- Stacked-sheet folder ----------
+       Reference: a stack of pentagonal sheets with a notch tab on top
+       and clipped bottom corners, layered behind the front face with
+       small offsets to suggest physical depth. Hover fans the stack
+       wider so the user can see the layers separate.
+
+       Structure:
+         .folder3d              role=button, holds animation + hover
+           .folder3d-sheet × N  background "papers", each translated
+                                further down-right + dimmer
+           .folder3d-face       the front pentagon, with notch tab
+             .folder3d-tab      the notch sticking off the top
+             .folder3d-icon, .folder3d-label, .folder3d-sub
+           .folder3d-chip       count chip floating above corner
+
+       Pentagonal shape is built via clip-path on each sheet:
+         flat top, vertical sides for the upper 70%, then cut to a
+         centered bottom point — but in the reference the bottom is
+         actually just clipped corners (octagonal feel). Both work;
+         we use a 6-sided shape with notch:
+             ┌─┐_┌─┐
+             │       │   ← top with notch (rendered as element)
+             │       │   ← straight sides
+             /         \  ← angled bottom corners
+             ───────
+       ---------- */
+    .folder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 28px 22px;
+      padding: 30px 14px 18px;
+    }
+    .folder3d {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3.6;
+      display: block;
+      cursor: pointer;
+      color: var(--folder-color, var(--ares-cyan));
+      font-family: inherit;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                  filter 0.30s ease;
+      animation: folder-rise 0.5s ease both;
+      outline: none;
+      /* The whole assembly tilts slightly forward at rest, so the
+         stack of sheets reads as a 3D object rather than flat decals. */
+      transform: rotateZ(0deg);
+    }
+    .folder3d:hover,
+    .folder3d:focus-visible {
+      transform: translateY(-6px);
+      filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.6));
+    }
+
+    /* Pentagon-with-notch shape applied to BOTH the face and every
+       stacked sheet so they match exactly. Notch is built as a
+       sibling .folder3d-tab element rather than baked into clip-path,
+       so the sheet's main body uses a simpler cut and the tab can
+       be tinted independently. Shape: top straight, vertical sides
+       for ~78%, then angled cuts to a flat bottom. */
+    .folder3d-face,
+    .folder3d-sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% 78%,
+        88% 100%,
+        12% 100%,
+        0% 78%
+      );
+    }
+
+    /* Background sheets — drawn behind the face, each shifted down-
+       right by an additive offset and progressively dimmer. The
+       N+1th sheet is darkest / furthest. Five sheets give a clear
+       "stack of papers" feel without becoming busy. The offsets and
+       opacities are set inline via custom properties from JS. */
+    .folder3d-sheet {
+      background:
+        linear-gradient(160deg,
+          rgba(20, 30, 40, 0.92) 0%,
+          rgba(10, 20, 28, 0.92) 70%,
+          rgba(6,  12, 18, 0.92) 100%);
+      border: none;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+        inset 0 0 16px rgba(0, 0, 0, 0.45);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.35s ease;
+      /* The custom properties below are written per-sheet in JS:
+           --i      : sheet index 1..N
+           --dx/--dy: per-sheet offset multipliers
+         The resulting transform stacks each sheet a little
+         deeper into the page-plane. */
+      transform: translate(
+        calc(var(--dx, 6px) * var(--i, 0)),
+        calc(var(--dy, 8px) * var(--i, 0))
+      );
+      opacity: calc(0.92 - 0.12 * var(--i, 0));
+      z-index: 1;
+      pointer-events: none;
+    }
+    /* Hover: fan the stack — each sheet pushes further out. */
+    .folder3d:hover .folder3d-sheet,
+    .folder3d:focus-visible .folder3d-sheet {
+      transform: translate(
+        calc(var(--dx, 6px) * var(--i, 0) * 2.0),
+        calc(var(--dy, 8px) * var(--i, 0) * 1.4)
+      );
+    }
+
+    /* Edge accent strokes that catch light along the right edge of
+       each sheet — drawn via box-shadow inset cyan/lime to suggest
+       reflective sheet edges, very subtle. */
+    .folder3d-sheet:nth-child(odd)  { background-blend-mode: normal; }
+
+    /* Front face — sits in front of the stack with the colored
+       border, the notch tab, and the centered label/icon. */
+    .folder3d-face {
+      background:
+        linear-gradient(165deg,
+          rgba(34, 48, 62, 0.95) 0%,
+          rgba(18, 30, 42, 0.95) 55%,
+          rgba(10, 18, 26, 0.95) 100%);
+      box-shadow:
+        inset 0 0 0 1px currentColor,
+        inset 0 0 28px rgba(255, 255, 255, 0.05),
+        inset 0 -8px 0 0 rgba(0, 0, 0, 0.40);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 22px 16px 18px;
+      text-align: center;
+      transition: filter 0.30s ease, box-shadow 0.30s ease;
+      z-index: 2;
+    }
+    .folder3d:hover .folder3d-face,
+    .folder3d:focus-visible .folder3d-face {
+      filter: brightness(1.18);
+      box-shadow:
+        inset 0 0 0 1px currentColor,
+        inset 0 0 28px rgba(255, 255, 255, 0.10),
+        inset 0 -8px 0 0 rgba(0, 0, 0, 0.40),
+        0 0 0 1px currentColor;
+    }
+
+    /* Notch tab sticking out of the top of the face. Positioned
+       outside the clip-path so it visually sits in the notch. */
+    .folder3d-tab {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 38%;
+      height: 16px;
+      background:
+        linear-gradient(180deg,
+          rgba(40, 56, 72, 0.95) 0%,
+          rgba(20, 32, 44, 0.95) 100%);
+      box-shadow:
+        inset 0 0 0 1px currentColor,
+        0 2px 4px rgba(0, 0, 0, 0.40);
+      /* Trapezoid: wider at top, narrower where it meets the face. */
+      clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    /* Folder face contents */
+    .folder3d-icon {
+      width: 36px; height: 30px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: rgba(0, 0, 0, 0.40);
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+    .folder3d-label {
+      font-family: var(--ares-mono);
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: currentColor;
+      line-height: 1.2;
+    }
+    .folder3d-sub {
+      font-family: var(--ares-mono);
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      color: var(--ares-muted);
+    }
+
+    /* Count chip on top-right corner. Sits OUTSIDE the clip-path so
+       it isn't clipped off — z-index above the face. */
+    .folder3d-chip {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--ares-mono);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      color: #000;
+      background: currentColor;
+      box-shadow: 0 0 12px currentColor;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* ---------- Folder content view (single folder, in-pane) ---------- */
+    .folder-view {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: pane-fade 0.32s ease both;
+    }
+    .folder-view-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed rgba(0, 217, 255, 0.18);
+    }
+    .folder-view-head .title {
+      font-family: var(--ares-mono);
+      font-size: 16px;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      color: var(--folder-color, var(--ares-cyan));
+    }
+    .folder-view-head .sub {
+      font-family: var(--ares-mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+    }
+    .folder-view-body p {
+      font-family: var(--ares-sans);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--ares-text);
+      margin: 0 0 12px;
+    }
+    .folder-view-doclist {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .folder-view-doclist li {
+      border-left: 2px solid var(--folder-color, var(--ares-cyan));
+      background: rgba(0, 0, 0, 0.35);
+    }
+    .folder-view-doclist a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--ares-text);
+      text-decoration: none;
+      transition: background 0.16s ease, color 0.16s ease,
+                  padding-left 0.16s ease;
+    }
+    .folder-view-doclist a::before {
+      content: '›';
+      font-size: 14px;
+      color: var(--folder-color, var(--ares-cyan));
+      opacity: 0.8;
+    }
+    .folder-view-doclist a:hover {
+      background: rgba(0, 217, 255, 0.08);
+      color: var(--ares-lime);
+      padding-left: 20px;
+    }
+    .folder-view-doclist a.is-external::after {
+      content: '↗';
+      margin-left: auto;
+      color: var(--ares-dim);
+      font-size: 12px;
+    }
+
+    /* ---------- D2L alert ---------- */
+    .docs-alert {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 26px;
+      border: 1px solid rgba(176, 38, 255, 0.55);
+      background:
+        radial-gradient(circle at 20% 0%,
+          rgba(176, 38, 255, 0.10) 0%,
+          rgba(0, 0, 0, 0.40) 60%);
+      animation: pane-fade 0.32s ease both;
+    }
+    .docs-alert-head {
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.30em;
+      text-transform: uppercase;
+      color: var(--ares-purple);
+    }
+    .docs-alert-head .glyph {
+      width: 28px; height: 28px;
+      border: 1px solid currentColor;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .docs-alert-head .glyph svg {
+      width: 16px; height: 16px;
+      stroke: currentColor; stroke-width: 2;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .docs-alert-msg {
+      font-family: var(--ares-sans);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--ares-text);
+    }
+    .docs-alert-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid var(--ares-purple);
+      background: rgba(176, 38, 255, 0.08);
+      color: var(--ares-purple);
+      text-decoration: none;
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      transition: background 0.14s ease, color 0.14s ease,
+                  box-shadow 0.14s ease;
+    }
+    .docs-alert-link:hover {
+      background: rgba(176, 38, 255, 0.18);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(176, 38, 255, 0.40);
+    }
+
+    /* Soft rise-in animation for each folder as the grid loads. */
+    @keyframes folder-rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pane-fade {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 980px) {
+      .nav-left { padding-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ares-substrate" aria-hidden="true"></div>
+  <div class="ares-edge-top" aria-hidden="true"></div>
+  <div class="ares-edge-bot" aria-hidden="true"></div>
+
+  <div class="ares-hud ares-hud--top">
+    <span><span class="ares-pulse"></span>NODE_VAULT // NAVIGATION</span>
+    <span class="ares-muted">INFO_698 // RADIAL_ARRAY_v0.1</span>
+  </div>
+
+  <!-- =============================================================
+       PERMANENT TOP BANNER — single full-width row carrying every
+       navigation control: section title, breadcrumb + back, depth
+       indicator, SWAP VIEW chip, and RETURN TO MAIN.
+       ============================================================= -->
+  <div class="docs-banner-bar" id="docs-banner-bar">
+
+    <!-- Section title (left side) -->
+    <div class="docs-banner-title">
+      <span class="dot" aria-hidden="true"></span>
+      <span id="docs-banner-title-text">DOCS // STANDBY</span>
+    </div>
+
+    <!-- BACK button -->
+    <button type="button" class="docs-subbanner-back" id="docs-subbanner-back"
+            disabled aria-label="Back" title="Back">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="15 6 9 12 15 18"></polyline>
+      </svg>
+    </button>
+
+    <!-- Breadcrumb -->
+    <div class="docs-subbanner-crumb" id="docs-subbanner-crumb">
+      <span>// HOME</span>
+    </div>
+
+    <!-- (Spacer absorbs slack so right-side chips snap to the end) -->
+    <div class="docs-banner-spacer" aria-hidden="true"></div>
+
+    <!-- SWAP VIEW chip — enabled by preview-pane.js when a doc loads -->
+    <button type="button" class="docs-subbanner-swap" id="docs-subbanner-swap"
+            disabled aria-label="Swap wheel and document positions"
+            title="Swap wheel and document positions">
+      <span class="swap-icon" aria-hidden="true">⇄</span>
+      <span class="swap-lbl">SWAP VIEW</span>
+    </button>
+
+    <!-- Return to splash -->
+    <a class="docs-banner-back" href="index.html" title="Return to splash">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="15 6 9 12 15 18"></polyline>
+      </svg>
+      <span>Return to Main</span>
+    </a>
+
+  </div>
+
+  <main class="nav-page">
+
+    <!-- =========================================================
+         LEFT — wheel column
+         (Banner moved up to the permanent top bar above .nav-page.)
+         ========================================================= -->
+    <section class="nav-left">
+
+      <div class="nav-header">
+        <div class="ares-label">&mdash; SELECT NODE TO DEPLOY &mdash;</div>
+        <h2>CAPSTONE // <span class="ares-cyan">CONSOLE</span></h2>
+      </div>
+
+      <div class="radial" id="radial">
+
+        <svg viewBox="0 0 680 680" class="radial-svg" aria-hidden="true">
+          <circle cx="340" cy="340" r="325" fill="none" stroke="#00d9ff" stroke-width="0.6" opacity="0.5"/>
+          <circle cx="340" cy="340" r="265" fill="none" stroke="#b026ff" stroke-width="0.4" opacity="0.45" stroke-dasharray="2 8"/>
+          <circle cx="340" cy="340" r="200" fill="none" stroke="#c8ff00" stroke-width="0.3" opacity="0.4" stroke-dasharray="30 6 4 6"/>
+          <circle cx="340" cy="340" r="115" fill="none" stroke="#00d9ff" stroke-width="0.4" opacity="0.5"/>
+
+          <g id="radial-spokes" stroke="#00d9ff" stroke-width="0.5" opacity="0.3" stroke-dasharray="2 4"></g>
+
+          <g stroke="#00d9ff" stroke-width="1" opacity="0.7">
+            <line x1="340" y1="0"   x2="340" y2="14"/>
+            <line x1="340" y1="666" x2="340" y2="680"/>
+            <line x1="0"   y1="340" x2="14"  y2="340"/>
+            <line x1="666" y1="340" x2="680" y2="340"/>
+          </g>
+        </svg>
+
+        <div class="radial-center">
+          <div class="radial-center-frame ares-frame">
+            <span class="ares-corner-bl"></span><span class="ares-corner-br"></span>
+            <img src="assets/CapStone_img_.png" alt="INFO 698 Capstone"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div class="radial-fallback">
+              <i class="ti ti-photo" style="font-size:24px; color:var(--ares-cyan);" aria-hidden="true"></i>
+              <span>LOGO.PNG</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Static highlight station: a fixed frame at the top-of-wheel
+             position. Nodes rotate INTO this frame as the wheel spins.
+             Sized to roughly match a node's footprint (16.2% of wheel
+             width). Z-indexed ABOVE the nodes so its corner brackets
+             remain visible when a node lands inside it.
+             pointer-events: none so the underlying node remains clickable.
+             nav.js updates the --highlight-color CSS variable to match
+             the active node's section color. -->
+        <div class="wheel-highlight" id="wheelHighlight" aria-hidden="true">
+          <span class="wh-corner wh-tl"></span>
+          <span class="wh-corner wh-tr"></span>
+          <span class="wh-corner wh-bl"></span>
+          <span class="wh-corner wh-br"></span>
+        </div>
+
+      </div>
+
+      <!-- Wheel clicker: rotate one slot left / right so a different node
+           sits in the top "deploy" position. Arrows use inline SVG so
+           they render on first paint regardless of icon-font load order. -->
+      <div class="wheel-clicker" id="wheel-clicker" role="group" aria-label="Rotate wheel">
+        <button type="button" class="wheel-btn" id="wheel-btn-left"
+                aria-label="Rotate left (bring left neighbour to top)" title="Rotate left">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 6 9 12 15 18"></polyline></svg>
+        </button>
+        <a class="wheel-slot-name" id="wheel-slot-name" href="#"
+           aria-live="polite" title="Open the node currently in the top slot">
+          <b>--</b>
+        </a>
+        <button type="button" class="wheel-btn" id="wheel-btn-right"
+                aria-label="Rotate right (bring right neighbour to top)" title="Rotate right">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </button>
+      </div>
+
+      <div class="readout" id="readout">[ HOVER NODE // AWAITING INPUT ]</div>
+    </section>
+
+    <!-- =========================================================
+         RIGHT — docs pane (folder stack + preview)
+         The banner/sub-banner are now in the LEFT column; this
+         column is now folder-stack on top + preview-pane on bottom.
+         ========================================================= -->
+    <aside class="docs-side">
+
+      <!-- Stage: split into FOLDER STACK (top) + PREVIEW PANE (bottom).
+           folder-stack.js renders the Three.js viewer + rail + count
+           panel into #stack-host. The preview pane below renders PDFs
+           (or empty-state hero) into #preview-host. -->
+      <div class="docs-stage docs-stage--split" id="docs-stage" data-state="empty">
+
+        <!-- TOP — folder-stack viewer host.
+             folder-stack.js queries DOM by id (#stage, #sideRail, etc.)
+             so we template that DOM tree inside this host before the
+             engine boots. See js/folder-stack-mount.js. -->
+        <div class="stack-host" id="stack-host"></div>
+
+        <!-- BOTTOM — PDF preview pane. preview-pane.js owns this.
+             When empty: large ◇ hero with "AWAITING SELECTION".
+             When loaded: the iframe fills the entire pane (no bar,
+             no chips, no close button — the document IS the pane).
+             To switch documents, activate another folder. To dismiss,
+             deactivate / move to another section. -->
+        <div class="preview-host" id="preview-host">
+          <div class="preview-empty" id="previewEmpty">
+            <div class="preview-empty-glyph" aria-hidden="true">◇</div>
+            <div class="preview-empty-lbl">// AWAITING SELECTION</div>
+            <div class="preview-empty-hint">select a folder to preview</div>
+          </div>
+          <iframe class="preview-iframe" id="previewIframe"
+                  title="document preview" hidden></iframe>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </main>
+
+  <div class="ares-hud ares-hud--bot">
+    <span id="hud-count">0 NODES // LOADING</span>
+    <span>HELIX_STACK // ACTIVE</span>
+  </div>
+
+  <!-- Three.js (folder-stack engine dependency) loaded BEFORE the engine. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Data + wheel + docs state-machine first. -->
+  <script src="js/data-loader.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/docs-nav.js"></script>
+
+  <!-- Folder-stack mount helper templates the engine's DOM, then folder-
+       stack.js boots normally against those elements. preview-pane.js
+       wires the bottom pane to docs-nav.js events. -->
+  <script src="js/folder-stack-mount.js"></script>
+  <script src="js/folder-stack.js"></script>
+  <script src="js/preview-pane.js"></script>
+
+</body>
+</html>

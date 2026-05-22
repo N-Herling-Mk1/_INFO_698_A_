@@ -1,0 +1,377 @@
+/* ============================================================
+   folder-stack.css
+   Extracted verbatim from folder_system.html (mk_0).
+   Selectors duplicated with ares.css have been removed:
+     :root, html/body, .blueprint, .menubar, @keyframes pulse
+   ============================================================ */
+
+/* === Background blueprint grid === */
+/* === Top menu bar === */
+/* ============================================================
+     PERMANENT RIGHT RAIL — fills its grid column
+     ============================================================ */
+.side-rail {
+    /* No longer fixed-positioned; it's the third grid column in .stage */
+    position: relative;
+    z-index: 60;
+    background: linear-gradient(180deg, #0a131a 0%, #06101a 100%);
+    border-left: 1px solid rgba(37, 214, 149, 0.35);
+    color: #b8d4c8;
+    font-family: 'Courier New', ui-monospace, monospace;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 28px;
+    gap: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(37,214,149,0.4) transparent;
+  }
+.side-rail::-webkit-scrollbar { width: 6px; }
+.side-rail::-webkit-scrollbar-thumb {
+    background: rgba(37, 214, 149, 0.4);
+  }
+.rail-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 2px 8px;
+    border-bottom: 1px solid rgba(37, 214, 149, 0.25);
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+.rail-head-title { color: var(--accent); font-weight: bold; }
+.rail-head-meta  { color: #5e7a8a; }
+.rail-block {
+    background: #060d12;
+    border: 1px solid rgba(37, 214, 149, 0.22);
+    transition: border-color .25s, opacity .25s;
+  }
+.rail-block.idle { opacity: 0.5; }
+.rail-block.active { border-color: rgba(37, 214, 149, 0.65); }
+.rail-block-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0a1820;
+    border-bottom: 1px solid rgba(37, 214, 149, 0.25);
+    padding: 5px 10px;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+.rail-block-title { color: var(--accent); }
+.rail-block-meta  { color: #5e7a8a; font-size: 9px; }
+.rail-block-body {
+    padding: 8px 10px 10px;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+/* Find */
+.find-body { padding: 8px 10px; }
+.find-input-wrap {
+    display: flex; align-items: center; gap: 6px;
+    background: #02080c;
+    border: 1px solid rgba(37, 214, 149, 0.25);
+    padding: 4px 8px;
+  }
+.find-input-wrap:focus-within {
+    border-color: var(--accent);
+  }
+.find-prompt {
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+  }
+.find-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #d4ecde;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 2px 0;
+    text-transform: uppercase;
+  }
+.find-input::placeholder {
+    color: #4a6471;
+    text-transform: none;
+    letter-spacing: 0.5px;
+  }
+.find-clear {
+    background: transparent;
+    border: none;
+    color: #5e7a8a;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color .15s;
+  }
+.find-clear:hover { color: var(--accent); }
+.find-clear:disabled { opacity: 0.25; cursor: default; }
+/* Scroll */
+.scroll-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 10px;
+  }
+.scroll-btn {
+    background: transparent;
+    border: 1px solid rgba(37, 214, 149, 0.3);
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    width: 38px; height: 26px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .08s;
+  }
+.scroll-btn:hover {
+    background: rgba(37, 214, 149, 0.15);
+    border-color: var(--accent);
+  }
+.scroll-btn:active { transform: scale(0.94); }
+.scroll-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+  }
+.scroll-hint {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #5e7a8a;
+    text-transform: uppercase;
+    text-align: center;
+    flex: 1;
+  }
+/* Type legend */
+.legend-body {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 8px;
+  }
+.legend-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #b8d4c8;
+    line-height: 1.4;
+  }
+.legend-row .swatch {
+    width: 18px; height: 3px;
+    flex-shrink: 0;
+    box-shadow: 0 0 4px currentColor;
+  }
+.legend-row.dim { opacity: 0.35; }
+/* File inspect */
+.fi-body {}
+.fi-idle {
+    color: #5e7a8a;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 0;
+    text-align: center;
+  }
+.fi-content { display: none; }
+.file-info.active .fi-content { display: block; }
+.file-info.active .fi-idle    { display: none; }
+.file-info .fi-line {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+.file-info .fi-line::before {
+    content: '> ';
+    color: var(--accent);
+  }
+.file-info .fi-line .k { color: #5e7a8a; }
+.file-info .fi-line .v { color: #d4ecde; }
+.file-info .fi-line .accent { color: var(--accent); }
+.file-info .fi-name {
+    color: #fff;
+    font-size: 12px;
+  }
+.file-info .fi-preview {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(37, 214, 149, 0.18);
+    color: #7a9088;
+    font-size: 10px;
+    line-height: 1.5;
+    max-height: 100px;
+    overflow: hidden;
+  }
+.file-info .fi-preview .hex {
+    color: var(--accent-dim);
+    word-break: break-all;
+  }
+.file-info .blink {
+    width: 8px; height: 12px;
+    background: var(--accent);
+    animation: pulse 1.1s infinite;
+  }
+/* Access controls */
+.access-dialog .access-body {
+    padding: 10px;
+  }
+.access-dialog .drive {
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+.access-dialog .msg {
+    color: #a8bcc8;
+    font-size: 10px;
+    line-height: 1.55;
+  }
+.access-dialog .actions {
+    display: flex;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+.access-dialog .actions button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    color: var(--accent);
+    padding: 9px 0;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: background .2s, opacity .2s;
+  }
+.access-dialog .actions button:last-child {
+    border-right: none;
+    color: #889aa6;
+  }
+.access-dialog .actions button:hover:not(:disabled) {
+    background: rgba(37, 214, 149, 0.15);
+  }
+.access-dialog .actions button:last-child:hover:not(:disabled) {
+    background: rgba(255,255,255,0.05);
+  }
+.access-dialog .actions button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+/* === Three.js canvas — sized to its container (.stack-host), not
+   the viewport. The engine's renderer.setSize() controls pixel
+   dimensions; this CSS controls display layout. === */
+#stage {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    z-index: 10;
+  }
+/* === Sector label — overlay anchored bottom-center of .stack-pane === */
+.sector-label {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #fff;
+    background: var(--hud);
+    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: opacity .3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+.sector-label .sep { color: var(--accent); margin: 0 6px; }
+/* === Hovered folder filename ghost text === */
+.folder-tags {
+    display: none;
+  }
+.count-panel {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 80;
+    background: rgba(14, 27, 36, 0.92);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 10px 12px;
+    font-family: 'Courier New', monospace;
+    color: #c8d6e0;
+    width: 168px;
+  }
+.count-panel .label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #7e94a3;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+.count-panel .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+.count-panel button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #c8d6e0;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background .15s, border-color .15s;
+  }
+.count-panel button:hover {
+    background: rgba(37, 214, 149, 0.18);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+.count-panel button:active { transform: scale(0.95); }
+.count-panel button:disabled {
+    opacity: 0.3; cursor: not-allowed;
+  }
+.count-panel button:disabled:hover {
+    background: transparent; border-color: rgba(255,255,255,0.18); color: #c8d6e0;
+  }
+.count-panel .value {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+/* === Transfer overlay (briefly shown after YES — confined to stack-pane) === */
+.transfer-overlay {
+    position: absolute; inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(37,214,149,0.18), transparent 60%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+.transfer-overlay.shown { opacity: 1; }
+.transfer-overlay .msg {
+    color: var(--accent);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    letter-spacing: 6px;
+    text-align: center;
+    text-shadow: 0 0 18px rgba(37,214,149,0.6);
+  }
+.transfer-overlay .msg .sub {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #c8d6e0;
+    margin-top: 8px;
+    opacity: 0.7;
+  }

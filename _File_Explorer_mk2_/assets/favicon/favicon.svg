@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <!--
+    INFO 698 // Capstone favicon
+    ============================
+    Minimalist 4-faceted pyramid in 3/4 perspective, two-tone split:
+      • Left face:  purple → cyan vertical gradient   (#b026ff → #00d9ff)
+      • Right face: lime → yellow vertical gradient   (#c8ff00 → #fff200)
+    Designed to read at 16px through 512px. Transparent background
+    so it sits cleanly on any browser chrome.
+  -->
+  <defs>
+    <!-- Left front face: purple-to-cyan -->
+    <linearGradient id="gL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#7a1fff"/>
+      <stop offset="55%"  stop-color="#5e3dff"/>
+      <stop offset="100%" stop-color="#00d9ff"/>
+    </linearGradient>
+    <!-- Right front face: lime-to-yellow -->
+    <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#7eff5b"/>
+      <stop offset="55%"  stop-color="#a8ff20"/>
+      <stop offset="100%" stop-color="#fff200"/>
+    </linearGradient>
+    <!-- Left back face (visible sliver in 3/4 view): darker purple -->
+    <linearGradient id="gLb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#3d0a80"/>
+      <stop offset="100%" stop-color="#1a0040"/>
+    </linearGradient>
+    <!-- Right back face: darker lime -->
+    <linearGradient id="gRb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#4a7a00"/>
+      <stop offset="100%" stop-color="#1a2a00"/>
+    </linearGradient>
+    <!-- Apex highlight glow -->
+    <radialGradient id="gApex" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="60%"  stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!--
+    Pyramid geometry. Apex at top-center, base 4 corners as a diamond
+    around the bottom (front, right, back, left). Order matters:
+    back faces first (so front faces overdraw them), then front faces.
+
+    Coordinate plan (64×64 viewBox, with ~6px padding):
+      Apex:       (32,  6)
+      Base-front: (32, 56)        — closest to viewer, lowest in view
+      Base-right: (58, 44)
+      Base-back:  (32, 32)        — farthest from viewer, higher in view
+      Base-left:  ( 6, 44)
+  -->
+
+  <!-- Back-right face (faint, behind right front face) -->
+  <polygon points="32,6 32,32 58,44" fill="url(#gRb)" opacity="0.55"/>
+  <!-- Back-left face -->
+  <polygon points="32,6 6,44 32,32" fill="url(#gLb)" opacity="0.55"/>
+
+  <!-- Front-left face: apex → base-left → base-front -->
+  <polygon points="32,6 6,44 32,56" fill="url(#gL)"/>
+  <!-- Front-right face: apex → base-front → base-right -->
+  <polygon points="32,6 32,56 58,44" fill="url(#gR)"/>
+
+  <!-- Edge strokes — thin, slightly brighter; help readability at small sizes -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Center seam (apex to front base) — brightest because it's the spine -->
+    <line x1="32" y1="6" x2="32" y2="56"
+          stroke="#ffffff" stroke-width="0.8" opacity="0.85"/>
+    <!-- Outer silhouette: apex to left, apex to right, left to front, right to front -->
+    <polyline points="6,44 32,6 58,44"
+              stroke="#ffffff" stroke-width="0.6" opacity="0.55"/>
+    <polyline points="6,44 32,56 58,44"
+              stroke="#ffffff" stroke-width="0.6" opacity="0.55"/>
+  </g>
+
+  <!-- Apex highlight: small radial bloom catching light at the peak -->
+  <circle cx="32" cy="6" r="4" fill="url(#gApex)"/>
+</svg>

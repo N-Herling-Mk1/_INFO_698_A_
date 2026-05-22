@@ -1,0 +1,80 @@
+{
+  "centerLabel": "INFO 698",
+  "nodes": [
+    {
+      "id": "OVR",
+      "label": "Overview",
+      "sub": "Project abstract",
+      "icon": "ti-file-text",
+      "color": "#00d9ff",
+      "angle": -90,
+      "href": "pages/overview.html"
+    },
+    {
+      "id": "MTH",
+      "label": "Methodology",
+      "sub": "Approach & design",
+      "icon": "ti-route",
+      "color": "#00d9ff",
+      "angle": -45,
+      "href": "pages/methodology.html"
+    },
+    {
+      "id": "DAT",
+      "label": "Datasets",
+      "sub": "Data sources",
+      "icon": "ti-database",
+      "color": "#b026ff",
+      "angle": 0,
+      "href": "pages/datasets.html"
+    },
+    {
+      "id": "RES",
+      "label": "Results",
+      "sub": "Viz & findings",
+      "icon": "ti-chart-line",
+      "color": "#c8ff00",
+      "angle": 45,
+      "href": "pages/results.html"
+    },
+    {
+      "id": "REP",
+      "label": "Repo",
+      "sub": "GitHub // source",
+      "icon": "ti-brand-github",
+      "color": "#c8ff00",
+      "angle": 90,
+      "href": "https://github.com/your-handle/info698-capstone",
+      "external": true
+    },
+    {
+      "id": "DOC",
+      "label": "Docs",
+      "sub": "Write-up",
+      "icon": "ti-book-2",
+      "color": "#c8ff00",
+      "angle": 135,
+      "href": "pages/docs.html"
+    },
+    {
+      "id": "DCK",
+      "label": "Deck",
+      "sub": "Presentation",
+      "icon": "ti-presentation",
+      "color": "#b026ff",
+      "angle": 180,
+      "href": "pages/deck.html"
+    },
+    {
+      "id": "D2L",
+      "label": "D2L",
+      "sub": "UA Course shell",
+      "icon": "ti-school",
+      "color": "#b026ff",
+      "angle": 225,
+      "href": "https://d2l.arizona.edu/",
+      "external": true,
+      "popup": true
+    }
+  ]
+}

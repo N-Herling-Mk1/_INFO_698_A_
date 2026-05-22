@@ -1,0 +1,239 @@
+/* ============================================================
+   INFO 698 // CAPSTONE — ARES.CSS
+   Shared TRON Ares stylesheet
+   ============================================================ */
+
+:root {
+  --ares-bg:       #000000;
+  --ares-cyan:     #00d9ff;
+  --ares-purple:  #b026ff;
+  --ares-lime:    #c8ff00;
+  --ares-text:    #e8f4ff;
+  --ares-muted:   #7fb3d5;
+  --ares-dim:     #5a8ba8;
+  --ares-grid:    rgba(0, 217, 255, 0.18);
+  --ares-mono:    'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --ares-sans:    'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ares-bg);
+  color: var(--ares-text);
+  font-family: var(--ares-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a { color: var(--ares-cyan); text-decoration: none; }
+a:hover { color: var(--ares-lime); }
+
+/* ---------- Grid substrate ---------- */
+.ares-substrate {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--ares-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ares-grid) 1px, transparent 1px),
+    linear-gradient(rgba(0,217,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,217,255,0.08) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  opacity: 0.5;
+}
+
+/* ---------- Edge accents ---------- */
+.ares-edge-top, .ares-edge-bot {
+  position: fixed;
+  left: 0; right: 0;
+  height: 1px;
+  z-index: 4;
+  pointer-events: none;
+}
+.ares-edge-top {
+  top: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--ares-cyan) 20%, var(--ares-purple) 50%,
+    var(--ares-lime) 80%, transparent 100%);
+}
+.ares-edge-bot {
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--ares-lime) 20%, var(--ares-cyan) 50%,
+    var(--ares-purple) 80%, transparent 100%);
+}
+
+/* ---------- HUD chrome (top + bottom strips) ---------- */
+.ares-hud {
+  position: fixed;
+  left: 16px; right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--ares-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--ares-cyan);
+  z-index: 5;
+  pointer-events: none;
+}
+.ares-hud--top { top: 16px; }
+.ares-hud--bot {
+  bottom: 16px;
+  font-size: 10px;
+  color: var(--ares-dim);
+}
+.ares-hud .ares-pulse {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--ares-lime);
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: ares-pulse 2s ease-in-out infinite;
+}
+@keyframes ares-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* ---------- Corner brackets on framed elements ---------- */
+.ares-frame { position: relative; }
+.ares-frame::before,
+.ares-frame::after,
+.ares-frame > .ares-corner-bl,
+.ares-frame > .ares-corner-br {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+.ares-frame::before {
+  top: -1px; left: -1px;
+  border-top: 2px solid var(--ares-lime);
+  border-left: 2px solid var(--ares-lime);
+}
+.ares-frame::after {
+  top: -1px; right: -1px;
+  border-top: 2px solid var(--ares-lime);
+  border-right: 2px solid var(--ares-lime);
+}
+.ares-frame > .ares-corner-bl {
+  bottom: -1px; left: -1px;
+  border-bottom: 2px solid var(--ares-lime);
+  border-left: 2px solid var(--ares-lime);
+}
+.ares-frame > .ares-corner-br {
+  bottom: -1px; right: -1px;
+  border-bottom: 2px solid var(--ares-lime);
+  border-right: 2px solid var(--ares-lime);
+}
+
+/* ---------- Buttons ---------- */
+.ares-btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--ares-cyan);
+  color: var(--ares-cyan);
+  font-family: var(--ares-mono);
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  padding: 16px 48px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+.ares-btn:hover {
+  background: rgba(0, 217, 255, 0.08);
+  color: var(--ares-lime);
+  border-color: var(--ares-lime);
+}
+.ares-btn:active { transform: scale(0.98); }
+
+/* ---------- Typography utilities ---------- */
+.ares-mono     { font-family: var(--ares-mono); }
+.ares-cyan     { color: var(--ares-cyan); }
+.ares-purple  { color: var(--ares-purple); }
+.ares-lime     { color: var(--ares-lime); }
+.ares-muted    { color: var(--ares-muted); }
+.ares-dim      { color: var(--ares-dim); }
+
+.ares-label {
+  font-family: var(--ares-mono);
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  color: var(--ares-lime);
+  text-transform: uppercase;
+}
+
+/* ---------- Content cards (used by section pages) ---------- */
+.ares-card {
+  border: 1px solid rgba(0, 217, 255, 0.3);
+  background: rgba(0, 217, 255, 0.03);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* ---------- Page-level layout ---------- */
+.ares-page {
+  position: relative;
+  z-index: 2;
+  padding: 60px 40px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.ares-page h1 {
+  font-family: var(--ares-mono);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+  color: #ffffff;
+}
+
+.ares-page h2 {
+  font-family: var(--ares-mono);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ares-cyan);
+  margin: 0 0 14px;
+}
+
+.ares-page p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ares-text);
+  margin: 0 0 12px;
+}
+
+/* ---------- Back link ---------- */
+.ares-back {
+  font-family: var(--ares-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(0, 217, 255, 0.4);
+  color: var(--ares-cyan);
+  margin-bottom: 32px;
+  transition: all 0.18s ease;
+}
+.ares-back:hover {
+  border-color: var(--ares-lime);
+  color: var(--ares-lime);
+  background: rgba(0, 217, 255, 0.05);
+}

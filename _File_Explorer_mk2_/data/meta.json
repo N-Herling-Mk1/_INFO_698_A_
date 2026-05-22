@@ -1,0 +1,15 @@
+{
+  "site": {
+    "title": "INFO 698 // Capstone",
+    "course": "INFO 698",
+    "courseName": "Capstone",
+    "program": "Data Science // MS",
+    "institution": "University of Arizona // School of Information",
+    "cycle": "SU/26",
+    "operator": "N. Herling",
+    "status": "READY",
+    "version": "v0.1.0 // PROTOTYPE",
+    "stack": "HELIX_STACK // ACTIVE"
+  },
+  "tagline": "— UNIVERSITY OF ARIZONA // SCHOOL OF INFORMATION —"
+}

@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INFO 698 // Capstone</title>
+
+  <!-- Favicon set: SVG primary (modern browsers), ICO fallback (legacy),
+       Apple touch icon (iOS home screen), PWA-sized PNGs.
+       Pyramid mark derived from the capstone logo — minimalist two-tone
+       split (purple/cyan left, lime/yellow right). -->
+  <link rel="icon"             href="assets/favicon/favicon.svg" type="image/svg+xml" />
+  <link rel="icon"             href="assets/favicon/favicon.ico" sizes="any" />
+  <link rel="icon"             href="assets/favicon/favicon-32.png"  type="image/png" sizes="32x32" />
+  <link rel="icon"             href="assets/favicon/favicon-16.png"  type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="assets/favicon/favicon-180.png" sizes="180x180" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="stylesheet" href="css/ares.css" />
+  <style>
+    /* ============================================================
+       INFO 698 splash — 3-column dashboard layout (rev 20)
+       ============================================================
+
+       Layout (5 panels — middle column spans both rows):
+
+         ┌───────────┬──────────────────────────┬────────────┐
+         │ LT        │                          │ RT         │
+         │ Terminal  │    image button          │ Globe      │
+         │ (boot log)│    (large, centered)     │            │
+         │           │                          │            │
+         ├───────────┤  ←  fills middle  →     ─├────────────┤
+         │ LB        │    vertically +          │ RB         │
+         │ Stats     │    horizontally          │ Trends     │
+         │           │                          │ + probes ↗ │
+         └───────────┴──────────────────────────┴────────────┘
+
+       Outer columns: 1fr.  Middle: 2fr (spans both rows).
+       Right column rows split 45/55 so the globe gets vertical room.
+
+       Probe interaction: trend lines fire animated streaks that
+       arc UP through the right column to hit the globe, which
+       pulses briefly on contact. Drawn on the full-screen pulse
+       overlay canvas. Hovering the trends panel intensifies them.
+       ============================================================ */
+
+    /* ---------- Right-side palette ---------- */
+    /* Right column (globe panel + data ports) uses a red/green scheme
+       distinct from the rest of the page's cyan/lime/purple. The two
+       data ports are colour-coded to their lasers: PORT_A = green
+       (signal), PORT_B = red (alert). The globe panel border tints
+       toward green so the whole right column reads as one system. */
+    :root {
+      --port-a:        #00ff66;
+      --port-a-rgb:    0, 255, 102;
+      --port-b:        #ff3344;
+      --port-b-rgb:    255, 51, 68;
+      --right-border:  rgba(0, 255, 102, 0.35);
+    }
+
+    /* ---------- Top-level grid ---------- */
+    .splash {
+      /* Lock to viewport — content scales down rather than overflowing. */
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      padding: 22px 18px 18px;
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-rows: 45fr 55fr;
+      gap: 14px;
+      box-sizing: border-box;
+    }
+
+    /* ---------- Panel chrome (corner ticks, dark inset, border) ---------- */
+    .panel {
+      position: relative;
+      background: rgba(0, 8, 16, 0.55);
+      border: 1px solid rgba(0, 217, 255, 0.30);
+      padding: 14px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;        /* let children shrink in grid */
+    }
+    .panel::before, .panel::after {
+      content: '';
+      position: absolute;
+      width: 10px; height: 10px;
+      border: 1px solid var(--ares-cyan);
+      pointer-events: none;
+    }
+    .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .panel::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+    .panel-title {
+      font-family: var(--ares-mono);
+      font-size: 9px;
+      letter-spacing: 0.30em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+      margin: 0 0 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-shrink: 0;
+    }
+    .panel-title .panel-tag {
+      color: var(--ares-cyan);
+      font-size: 8px;
+    }
+
+    /* Panel placements (5-cell layout: middle spans both rows) */
+    .panel--lt { grid-column: 1; grid-row: 1; }                   /* terminal  */
+    .panel--lb { grid-column: 1; grid-row: 2; }                   /* stats     */
+    .panel--m  { grid-column: 2; grid-row: 1 / span 2;            /* image btn */
+                 padding: 24px 24px 30px; }
+    .panel--rt { grid-column: 3; grid-row: 1; }                   /* globe     */
+    .panel--rb { grid-column: 3; grid-row: 2; }                   /* trends    */
+
+    /* Right-column panels use the red/green palette (border + corner ticks) */
+    .panel--rt, .panel--rb {
+      border-color: var(--right-border);
+    }
+    .panel--rt::before, .panel--rt::after,
+    .panel--rb::before, .panel--rb::after {
+      border-color: var(--port-a);
+    }
+    .panel--rt .panel-title .panel-tag,
+    .panel--rb .panel-title .panel-tag {
+      color: var(--port-a);
+    }
+
+    /* ============================================================
+       MIDDLE (full-height column): big image button + power-up bar
+       ------------------------------------------------------------
+       The middle column spans both grid rows. Image button is
+       LARGE — fills the centre of the page. Vertically and
+       horizontally centred within the panel. Hover scales up,
+       breathes, reveals "PRESS BUTTON TO ENTER" caption.
+       Power-up bar sits below.
+       ============================================================ */
+    .image-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      /* Stack children top-down with a moderate gap so the power-bar
+         and marquee sit right under the image rather than being
+         pushed to the panel's bottom edge. */
+      justify-content: flex-start;
+      gap: 18px;
+      padding: 4px 0 6px;
+      position: relative;
+      min-height: 0;
+    }
+    .image-button {
+      /* Cap against BOTH viewport dimensions so the image never pushes
+         the power-bar + marquee off-screen. min(56vmin, 52vh) keeps
+         a square image inside the available middle-column space even
+         on short/wide screens. Floor at 280px so it stays usable. */
+      --img-size: clamp(280px, min(56vmin, 52vh), 720px);
+      position: relative;
+      width: var(--img-size);
+      height: var(--img-size);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      cursor: pointer;
+      outline: none;
+      transition: transform 320ms cubic-bezier(.22,1,.36,1),
+                  filter    320ms ease;
+      filter: drop-shadow(0 0 10px rgba(0, 217, 255, 0.40));
+      z-index: 4;
+    }
+    .image-button:hover,
+    .image-button:focus-visible {
+      transform: scale(1.05);
+      animation: image-breathe 2.4s ease-in-out infinite;
+      filter:
+        drop-shadow(0 0 18px rgba(200, 255, 0, 0.55))
+        drop-shadow(0 0 32px rgba(176, 38, 255, 0.32))
+        drop-shadow(0 0 48px rgba(0, 217, 255, 0.28));
+    }
+    @keyframes image-breathe {
+      0%, 100% { transform: scale(1.05); }
+      50%      { transform: scale(1.08); }
+    }
+    .image-button-frame {
+      width: 100%; height: 100%;
+      border: 1px solid rgba(0, 217, 255, 0.45);
+      background: rgba(0, 8, 16, 0.92);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .image-button-frame img {
+      max-width: 90%; max-height: 90%;
+      display: block;
+      transition: opacity 220ms ease;
+    }
+    .image-button-fallback {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--ares-mono);
+      font-size: 10px;
+      color: var(--ares-muted);
+      letter-spacing: 0.15em;
+    }
+    /* HUD ticks in the corners */
+    .image-button .tick {
+      position: absolute;
+      width: 12px; height: 12px;
+      border: 1px solid var(--ares-cyan);
+      z-index: 1;
+    }
+    .image-button .tick--tl { top: 4px; left: 4px;     border-right: none; border-bottom: none; }
+    .image-button .tick--tr { top: 4px; right: 4px;    border-left: none;  border-bottom: none; }
+    .image-button .tick--bl { bottom: 4px; left: 4px;  border-right: none; border-top: none; }
+    .image-button .tick--br { bottom: 4px; right: 4px; border-left: none;  border-top: none; }
+
+    .image-stage-bottom {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       Press-to-enter marquee — appears AFTER boot completes
+       ------------------------------------------------------------
+       Large, grainy, flashing call-to-action. Hidden until body
+       gets the .is-powered class (set by runPowerUp on completion).
+       "Grainy" achieved with a stacked text-shadow noise + a
+       chromatic offset layer so the text reads as a degraded VHS
+       title card. Flashes via opacity keyframe.
+       ============================================================ */
+    .press-marquee {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      font-family: var(--ares-mono);
+      font-size: clamp(18px, 2.4vmin, 30px);
+      font-weight: 700;
+      letter-spacing: 0.34em;
+      color: var(--ares-lime);
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding: 6px 18px;
+      margin-top: 4px;
+      /* Hidden by default; revealed once body.is-powered is set */
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 400ms ease, visibility 0s linear 400ms;
+      pointer-events: none;
+      /* Multi-layer grainy glow + chromatic RGB offset.
+         The 1px offsets toward each channel give a degraded-VHS feel
+         on top of the bright phosphor lime. */
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80, 0.85),
+         2px 0 0 rgba(0, 200, 255, 0.85),
+         0 0 10px rgba(200, 255, 0, 0.85),
+         0 0 22px rgba(200, 255, 0, 0.50),
+         0 0 40px rgba(200, 255, 0, 0.25);
+    }
+    body.is-powered .press-marquee {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 400ms ease, visibility 0s linear 0s;
+      animation: marquee-flash 1.4s ease-in-out infinite;
+    }
+    /* Brighten on hover of the actual button */
+    .image-button:hover ~ .press-marquee,
+    .image-button:focus-visible ~ .press-marquee {
+      animation-duration: 0.7s;
+    }
+    /* Suppress marquee during entering state */
+    .image-button.is-entering ~ .press-marquee {
+      opacity: 0 !important;
+      animation: none;
+    }
+    @keyframes marquee-flash {
+      0%, 100% { filter: brightness(1.00); opacity: 1; }
+      45%      { filter: brightness(1.40); opacity: 1; }
+      50%      { filter: brightness(0.35); opacity: 0.50; }
+      55%      { filter: brightness(1.40); opacity: 1; }
+    }
+    .press-marquee-bracket {
+      color: var(--ares-cyan);
+      font-size: 0.78em;
+      opacity: 0.85;
+      text-shadow:
+        -1px 0 0 rgba(255, 40, 80, 0.7),
+         1px 0 0 rgba(0, 255, 102, 0.7),
+         0 0 8px rgba(0, 217, 255, 0.55);
+    }
+    /* Subtle horizontal scanline texture overlay on the marquee text
+       for the "grainy" feel — applied as a thin pseudo-element. */
+    .press-marquee-text {
+      position: relative;
+    }
+    .press-marquee-text::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: repeating-linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0)    0px,
+        rgba(0, 0, 0, 0)    2px,
+        rgba(0, 0, 0, 0.35) 2px,
+        rgba(0, 0, 0, 0.35) 3px
+      );
+      mix-blend-mode: multiply;
+      opacity: 0.55;
+    }
+
+    /* Power-up bar — sits below the image; SEGMENTED for a raw HUD look.
+       20 individual tick blocks light up as the boot progresses; the
+       leading active block flickers + glows brighter. Saw-tooth top edge
+       (clip-path) breaks up the smooth rectangle. */
+    .power-bar-wrap {
+      width: clamp(440px, 58vmin, 860px);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    .power-bar-label {
+      font-family: var(--ares-mono);
+      font-size: 13px;
+      letter-spacing: 0.40em;
+      color: var(--ares-muted);
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+    }
+    .power-bar-label .pct { color: var(--ares-cyan); }
+    .power-bar {
+      height: 34px;
+      background: rgba(0, 217, 255, 0.05);
+      border: 1px solid rgba(0, 217, 255, 0.30);
+      position: relative;
+      display: flex;
+      gap: 3px;
+      padding: 3px;
+    }
+
+    /* Large readout sits below the bar. Big monospace digits with
+       RGB chromatic shear (red layer left, cyan layer right, cyan glow).
+       Centered, no label — the number speaks for itself. */
+    .power-readout {
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      padding-top: 4px;
+      border-top: 1px dashed rgba(0, 217, 255, 0.18);
+    }
+    .power-readout-val {
+      font-family: var(--ares-mono);
+      font-size: clamp(28px, 4.2vmin, 56px);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ares-cyan);
+      font-variant-numeric: tabular-nums;
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80, 0.85),
+         2px 0 0 rgba(0, 255, 102, 0.85),
+         0 0 12px rgba(0, 217, 255, 0.55);
+      transition: color 300ms ease, text-shadow 300ms ease;
+    }
+    /* When fully charged, the readout flips to lime + brighter glow.
+       Triggered via body.is-powered (set when the boot completes).   */
+    body.is-powered .power-readout-val {
+      color: var(--ares-lime);
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80, 0.85),
+         2px 0 0 rgba(0, 217, 255, 0.85),
+         0 0 16px rgba(200, 255, 0, 0.85);
+    }
+    /* Each segment is a single tick block. Default = dim. */
+    .power-bar-seg {
+      flex: 1 1 0;
+      height: 100%;
+      background: rgba(0, 217, 255, 0.10);
+      border-right: 1px solid rgba(0, 217, 255, 0.18);
+      /* Jagged top + bottom for a raw look */
+      clip-path: polygon(
+        0% 14%,   8% 0%,   16% 14%,
+        25% 0%,   33% 14%, 41% 0%,
+        50% 14%,  58% 0%,  66% 14%,
+        75% 0%,   83% 14%, 91% 0%,
+        100% 14%, 100% 86%, 91% 100%,
+        83% 86%,  75% 100%, 66% 86%,
+        58% 100%, 50% 86%,  41% 100%,
+        33% 86%,  25% 100%, 16% 86%,
+        8% 100%,  0% 86%
+      );
+      transition: background 80ms ease, box-shadow 80ms ease;
+    }
+    .power-bar-seg:last-child { border-right: none; }
+    /* Filled segments — cyan→lime gradient based on position (set inline) */
+    .power-bar-seg.is-on {
+      background: var(--seg-color, var(--ares-cyan));
+      box-shadow:
+        0 0 6px var(--seg-color, rgba(0, 217, 255, 0.7)),
+        0 0 12px var(--seg-color, rgba(0, 217, 255, 0.4));
+    }
+    /* Active leading segment — flickers */
+    .power-bar-seg.is-leading {
+      animation: seg-flicker 110ms steps(2, end) infinite;
+    }
+    @keyframes seg-flicker {
+      0%   { filter: brightness(1.0); }
+      50%  { filter: brightness(1.6); }
+      100% { filter: brightness(0.85); }
+    }
+    /* On READY: keep each segment's individual position-based colour
+       (red→yellow→blue→green across the bar). Only animate brightness
+       so the bar pulses as a unit without flattening to one hue. */
+    .power-bar.is-ready .power-bar-seg {
+      animation: power-ready-pulse 1.6s ease-in-out infinite;
+    }
+    .power-bar.is-ready .power-bar-seg:nth-child(odd)  { animation-delay: 0s; }
+    .power-bar.is-ready .power-bar-seg:nth-child(even) { animation-delay: 0.2s; }
+    @keyframes power-ready-pulse {
+      0%, 100% { filter: brightness(0.85); }
+      50%      { filter: brightness(1.30); }
+    }
+
+    /* ============================================================
+       ENTERING overlay (on click — replaces the image temporarily)
+       ============================================================ */
+    .splash-entering {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      background: radial-gradient(circle at 50% 50%,
+        rgba(0, 217, 255, 0.10) 0%,
+        rgba(0, 8, 16, 0.95) 70%);
+      transition: opacity 220ms ease, visibility 0s linear 220ms;
+      z-index: 5;
+    }
+    .image-button.is-entering .splash-entering {
+      opacity: 1; visibility: visible;
+      transition: opacity 220ms ease, visibility 0s linear 0s;
+    }
+    .image-button.is-entering .image-button-frame img { opacity: 0; }
+    .splash-entering-icon { width: 44px; height: 44px; }
+    .splash-entering-icon svg {
+      width: 100%; height: 100%;
+      animation: entering-spin 1.4s linear infinite;
+    }
+    @keyframes entering-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .splash-entering-msg {
+      font-family: var(--ares-mono);
+      font-size: 12px;
+      letter-spacing: 0.28em;
+      color: var(--ares-cyan);
+      text-transform: uppercase;
+      text-shadow: 0 0 10px var(--ares-cyan);
+      white-space: nowrap;
+    }
+    .splash-entering-dots {
+      display: inline-block;
+      width: 1.4em;
+      text-align: left;
+      letter-spacing: 0.1em;
+    }
+    .splash-entering-dots span {
+      opacity: 0;
+      animation: entering-dot 1.4s ease-in-out infinite;
+    }
+    .splash-entering-dots span:nth-child(1) { animation-delay: 0s; }
+    .splash-entering-dots span:nth-child(2) { animation-delay: 0.35s; }
+    .splash-entering-dots span:nth-child(3) { animation-delay: 0.70s; }
+    @keyframes entering-dot {
+      0%, 20%   { opacity: 0; }
+      40%, 100% { opacity: 1; }
+    }
+    .splash-entering-sub {
+      font-family: var(--ares-mono);
+      font-size: 9px;
+      letter-spacing: 0.40em;
+      color: var(--ares-lime);
+      opacity: 0.7;
+    }
+
+    /* ============================================================
+       RIGHT TOP: globe stage
+       ============================================================ */
+    .globe-stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    .globe-stage canvas {
+      /* JS sizes the canvas explicitly (square) — these caps just
+         prevent overflow if the panel is briefly larger than expected. */
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      opacity: 0;
+      filter: drop-shadow(0 0 6px rgba(0, 217, 255, 0.30));
+      transition: opacity 800ms ease 80ms;
+    }
+    .globe-stage canvas.is-ready { opacity: 1; }
+
+    /* ============================================================
+       LEFT BOTTOM: stats list
+       ============================================================ */
+    .stats-list {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 4px;
+      padding: 2px 0;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed rgba(0, 217, 255, 0.15);
+      font-family: var(--ares-mono);
+      letter-spacing: 0.10em;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .label {
+      color: var(--ares-muted);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+    }
+    /* Larger value text with stacked RGB-offset text-shadows that
+       create a horizontal chromatic-aberration / VHS-sheer look.
+       Red shifted left, blue shifted right, base color centered —
+       classic broken-CRT artifact. Static (no animation) so it reads
+       as a permanent style rather than a glitch. */
+    .stat-row .val {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ares-lime);
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80,  0.85),
+         2px 0 0 rgba(0,  200, 255, 0.85),
+         0   0 8px rgba(200, 255, 0, 0.45);
+    }
+    .stat-row .val--cyan {
+      color: var(--ares-cyan);
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80,  0.85),
+         2px 0 0 rgba(0,  255, 102, 0.85),
+         0   0 8px rgba(0,  217, 255, 0.45);
+    }
+    .stat-row .val--purple {
+      color: var(--ares-purple);
+      text-shadow:
+        -2px 0 0 rgba(255, 40, 80,  0.85),
+         2px 0 0 rgba(0,  255, 255, 0.85),
+         0   0 8px rgba(176, 38, 255, 0.45);
+    }
+
+    /* ============================================================
+       LEFT TOP: terminal (multi-line boot log) — moved from middle-bottom
+       ============================================================ */
+    .panel--lt { padding: 12px 18px 14px; }
+    .terminal {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      font-family: var(--ares-mono);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      /* CRT-screen feel: dark base with a slight green tint, inset glow
+         at the edges, subtle radial vignette like a tube monitor.
+         The greenish floor is what makes this read as a P1 phosphor CRT
+         (the classic green-screen terminal) rather than just a dark box. */
+      background:
+        radial-gradient(ellipse at center,
+          rgba(0, 28, 14, 0.85) 0%,
+          rgba(0, 12, 6, 0.92)  70%,
+          rgba(0, 4, 2, 0.98)   100%);
+      border: 1px solid rgba(0, 255, 102, 0.30);
+      box-shadow:
+        inset 0 0 18px rgba(0, 255, 102, 0.18),
+        inset 0 0 60px rgba(0, 0, 0, 0.6),
+        0 0 12px rgba(0, 217, 255, 0.10);
+      padding: 12px 16px;
+      position: relative;
+      overflow: hidden;
+      animation: crt-flicker 5s steps(40, end) infinite;
+    }
+    @keyframes crt-flicker {
+      0%, 100% { filter: brightness(1.00); }
+      10%      { filter: brightness(1.04); }
+      20%      { filter: brightness(0.97); }
+      30%      { filter: brightness(1.02); }
+      40%      { filter: brightness(0.99); }
+      55%      { filter: brightness(1.03); }
+      70%      { filter: brightness(0.96); }
+      85%      { filter: brightness(1.01); }
+    }
+    /* CRT scanlines — alternating green + cyan stripes for a real
+       P1 phosphor green-tube feel mixed with a subtle cyan ghost.
+       At full opacity these are subtle; mix-blend-mode: screen makes
+       them brighten text behind rather than darken it. */
+    .terminal::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background-image: repeating-linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0)        0px,
+        rgba(0, 0, 0, 0)        2px,
+        rgba(0, 255, 102, 0.10) 2px,
+        rgba(0, 255, 102, 0.10) 3px,
+        rgba(0, 0, 0, 0)        3px,
+        rgba(0, 0, 0, 0)        4px,
+        rgba(0, 217, 255, 0.05) 4px,
+        rgba(0, 217, 255, 0.05) 5px
+      );
+      opacity: 0.9;
+      mix-blend-mode: screen;
+    }
+    /* Vertical roll band — green tint to match the new phosphor cast */
+    .terminal::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 40px;
+      pointer-events: none;
+      z-index: 3;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 255, 102, 0)    0%,
+        rgba(0, 255, 102, 0.10) 40%,
+        rgba(0, 255, 102, 0.22) 50%,
+        rgba(0, 255, 102, 0.10) 60%,
+        rgba(0, 255, 102, 0)    100%
+      );
+      mix-blend-mode: screen;
+      top: -40px;
+      animation: crt-roll 6s linear infinite;
+    }
+    @keyframes crt-roll {
+      0%   { top: -40px; }
+      85%  { top: 100%; }
+      86%  { top: -40px; }
+      100% { top: -40px; }
+    }
+    /* Text content lives above scanlines via z-index 4 */
+    .terminal-log, .terminal-status { position: relative; z-index: 4; }
+    /* Text gets dual phosphor glow — green primary + cyan ghost.
+       The two offset shadows create a subtle chromatic-aberration feel
+       like an old monitor with imperfect convergence. */
+    .terminal-log .term-line .msg,
+    .terminal-status .msg {
+      text-shadow:
+        0 0 4px rgba(0, 255, 102, 0.55),
+        0 0 8px rgba(0, 255, 102, 0.25),
+        0 0 1px rgba(0, 217, 255, 0.40);
+    }
+    .terminal-log .term-line.is-armed .msg {
+      text-shadow: 0 0 4px rgba(200, 255, 0, 0.55);
+    }
+    .terminal-log .term-line.is-fire .msg {
+      text-shadow: 0 0 4px rgba(176, 38, 255, 0.55);
+    }
+    /* Prompt + OK tag also pick up the green phosphor */
+    .terminal-log .term-line .prompt,
+    .terminal-status .prompt {
+      color: var(--port-a);
+      text-shadow: 0 0 4px rgba(0, 255, 102, 0.6);
+    }
+    .terminal-log .term-line .ok {
+      color: var(--port-a);
+      text-shadow: 0 0 4px rgba(0, 255, 102, 0.6);
+    }
+    .terminal-log {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-right: 8px;
+      min-height: 0;
+    }
+    .terminal-log::-webkit-scrollbar { width: 4px; }
+    .terminal-log::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+    .terminal-log::-webkit-scrollbar-thumb { background: rgba(0, 217, 255, 0.3); }
+
+    .term-line {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 260ms ease, transform 260ms ease;
+    }
+    .term-line.is-visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .term-line .prompt { color: var(--ares-cyan); font-weight: 600; flex-shrink: 0; }
+    .term-line .msg    { color: var(--ares-text); }
+    .term-line .ok     { color: var(--ares-lime); font-weight: 500; margin-left: auto; flex-shrink: 0; }
+    .term-line .warn   { color: #ff9966; font-weight: 500; margin-left: auto; flex-shrink: 0; }
+    .term-line.is-status .msg { color: var(--ares-cyan); letter-spacing: 0.16em; text-transform: uppercase; }
+    .term-line.is-armed   .msg { color: var(--ares-lime); letter-spacing: 0.16em; text-transform: uppercase; }
+    .term-line.is-fire    .msg { color: var(--ares-purple); letter-spacing: 0.16em; text-transform: uppercase; }
+
+    .terminal-status {
+      flex-shrink: 0;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0, 217, 255, 0.20);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 11px;
+    }
+    .terminal-status .prompt { color: var(--ares-cyan); font-weight: 600; }
+    .terminal-status .msg {
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ares-muted);
+      transition: color 220ms ease;
+    }
+    .terminal-status .caret {
+      display: inline-block;
+      width: 7px;
+      height: 1em;
+      background: var(--ares-cyan);
+      animation: caret-blink 1s steps(2, end) infinite;
+      transition: background 220ms ease;
+    }
+    @keyframes caret-blink {
+      0%, 50%  { opacity: 1; }
+      51%,100% { opacity: 0; }
+    }
+    /* Terminal status colour driven by body classes set by JS */
+    body.is-armed   .terminal-status .msg   { color: var(--ares-lime); }
+    body.is-armed   .terminal-status .caret { background: var(--ares-lime); }
+    body.is-firing  .terminal-status .msg   { color: var(--ares-purple); }
+    body.is-firing  .terminal-status .caret { background: var(--ares-purple); }
+
+    /* ============================================================
+       RIGHT BOTTOM: data port widgets
+       ------------------------------------------------------------
+       Two stacked widgets, each a small specialty visualizer:
+         widget--cpu (cyan)  → multi-channel time series
+         widget--mem (lime)  → hyperbolic transform visualizer
+       Each widget has a header strip (label + mode + value) and a
+       canvas filling the rest. Border brightens when its node is
+       currently locked onto the globe.
+       ============================================================ */
+    .widget-grid {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      padding: 4px 0;
+      min-height: 0;
+    }
+    .widget {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 6px 10px 8px;
+      border: 1px solid rgba(0, 217, 255, 0.20);
+      background: rgba(0, 0, 0, 0.30);
+      transition: border-color 200ms ease, box-shadow 200ms ease,
+                  background 200ms ease;
+    }
+    .widget.is-locked[data-port="cpu"] {
+      border-color: rgba(var(--port-a-rgb), 0.75);
+      background: rgba(0, 32, 12, 0.55);
+      box-shadow: 0 0 14px rgba(var(--port-a-rgb), 0.30),
+                  inset 0 0 12px rgba(var(--port-a-rgb), 0.12);
+    }
+    .widget.is-locked[data-port="mem"] {
+      border-color: rgba(var(--port-b-rgb), 0.75);
+      background: rgba(32, 0, 6, 0.55);
+      box-shadow: 0 0 14px rgba(var(--port-b-rgb), 0.30),
+                  inset 0 0 12px rgba(var(--port-b-rgb), 0.12);
+    }
+    /* LED dot indicating active lock */
+    .widget::before {
+      content: '';
+      position: absolute;
+      left: -2px; top: 50%;
+      width: 4px; height: 16px;
+      transform: translateY(-50%);
+      background: rgba(var(--port-a-rgb), 0.25);
+      transition: background 200ms ease;
+    }
+    .widget[data-port="mem"]::before {
+      background: rgba(var(--port-b-rgb), 0.25);
+    }
+    .widget.is-locked[data-port="cpu"]::before {
+      background: var(--port-a);
+      box-shadow: 0 0 8px var(--port-a);
+      animation: widget-blink 800ms ease-in-out infinite;
+    }
+    .widget.is-locked[data-port="mem"]::before {
+      background: var(--port-b);
+      box-shadow: 0 0 8px var(--port-b);
+      animation: widget-blink 800ms ease-in-out infinite;
+    }
+    @keyframes widget-blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+
+    .widget-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-family: var(--ares-mono);
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed rgba(var(--port-a-rgb), 0.18);
+      margin-bottom: 4px;
+    }
+    .widget[data-port="mem"] .widget-head {
+      border-bottom-color: rgba(var(--port-b-rgb), 0.18);
+    }
+    .widget-label {
+      color: var(--ares-muted);
+      letter-spacing: 0.30em;
+    }
+    .widget.is-locked[data-port="cpu"] .widget-label { color: var(--port-a); }
+    .widget.is-locked[data-port="mem"] .widget-label { color: var(--port-b); }
+    .widget-mode {
+      color: var(--ares-dim);
+      font-size: 8px;
+      flex: 1;
+    }
+    .widget-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--port-a);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 6px rgba(var(--port-a-rgb), 0.40);
+      transition: color 200ms ease, text-shadow 200ms ease;
+    }
+    .widget[data-port="mem"] .widget-val {
+      color: var(--port-b);
+      text-shadow: 0 0 6px rgba(var(--port-b-rgb), 0.40);
+    }
+    .widget.is-locked[data-port="cpu"] .widget-val {
+      text-shadow: 0 0 10px rgba(var(--port-a-rgb), 0.90);
+    }
+    .widget.is-locked[data-port="mem"] .widget-val {
+      text-shadow: 0 0 10px rgba(var(--port-b-rgb), 0.90);
+    }
+    .widget-canvas {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      display: block;
+    }
+
+
+    /* ============================================================
+       TOP / BOTTOM HUD STRIPS (existing chrome from prior design)
+       ============================================================ */
+    .ares-substrate {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,217,255,0.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,217,255,0.10) 1px, transparent 1px),
+        linear-gradient(rgba(0,217,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,217,255,0.05) 1px, transparent 1px);
+      background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+      opacity: 0.45;
+      transition: opacity 300ms ease;
+    }
+    body.is-firing .ares-substrate { opacity: 0.75; }
+    .ares-edge-top, .ares-edge-bot {
+      position: fixed; left: 0; right: 0; height: 1px;
+      z-index: 8; pointer-events: none;
+    }
+    .ares-edge-top { top: 0;
+      background: linear-gradient(90deg, transparent, var(--ares-cyan) 20%,
+        var(--ares-purple) 50%, var(--ares-lime) 80%, transparent);
+    }
+    .ares-edge-bot { bottom: 0;
+      background: linear-gradient(90deg, transparent, var(--ares-lime) 20%,
+        var(--ares-cyan) 50%, var(--ares-purple) 80%, transparent);
+    }
+    .ares-hud {
+      position: fixed; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--ares-mono);
+      font-size: 10px; letter-spacing: 0.16em;
+      color: var(--ares-cyan); z-index: 9;
+      pointer-events: none;
+    }
+    .ares-hud--top { top: 6px; }
+    .ares-hud--bot { bottom: 6px; }
+    .ares-hud .muted { color: var(--ares-muted); }
+
+    /* ============================================================
+       PROBE OVERLAY — trends→globe streaks
+       ------------------------------------------------------------
+       Full-screen canvas, fixed, ABOVE the panels (z=5) so the
+       streaks visibly cross panel borders. Always rendered.
+       ============================================================ */
+    .probe-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      display: block;
+    }
+
+    /* ============================================================
+       PULSE OVERLAY (canvas for click bolts/sparks) — full screen
+       ============================================================ */
+    .pulse-overlay {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 6;
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+    .pulse-overlay.is-firing { opacity: 1; }
+    .pulse-overlay canvas { width: 100%; height: 100%; display: block; }
+    .pulse-ring {
+      position: fixed;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 6;
+      opacity: 0;
+      border: 1.5px solid var(--ares-cyan);
+      box-shadow: 0 0 20px var(--ares-cyan);
+    }
+    .pulse-ring--2 {
+      border-color: var(--ares-purple);
+      box-shadow: 0 0 20px var(--ares-purple);
+    }
+    .pulse-ring.is-firing { animation: pulse-ring 1.4s ease-out forwards; }
+    .pulse-ring--2.is-firing { animation: pulse-ring 1.4s ease-out 0.4s forwards; }
+    @keyframes pulse-ring {
+      0%   { width: 8px; height: 8px; opacity: 0.9; }
+      100% { width: 220vmax; height: 220vmax; opacity: 0;
+             margin-left: -110vmax; margin-top: -110vmax; }
+    }
+
+    /* ============================================================
+       Responsive: stack everything below 1024px
+       ============================================================ */
+    @media (max-width: 1024px) {
+      .splash {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        gap: 12px;
+      }
+      /* Stack order on small screens: terminal → button → globe → trends → stats */
+      .panel--lt { grid-column: 1; grid-row: 1; min-height: 240px; }
+      .panel--m  { grid-column: 1; grid-row: 2; min-height: 400px; }
+      .panel--rt { grid-column: 1; grid-row: 3; min-height: 320px; }
+      .panel--rb { grid-column: 1; grid-row: 4; min-height: 200px; }
+      .panel--lb { grid-column: 1; grid-row: 5; }
+      .image-button { --img-size: clamp(240px, 56vmin, 380px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ares-substrate" aria-hidden="true"></div>
+  <div class="ares-edge-top"  aria-hidden="true"></div>
+  <div class="ares-edge-bot"  aria-hidden="true"></div>
+
+  <div class="ares-hud ares-hud--top">
+    <span>HELIX // SPLASH_CONSOLE</span>
+    <span class="muted" id="hud-ts"></span>
+  </div>
+  <div class="ares-hud ares-hud--bot">
+    <span class="muted">INFO 698 // CAPSTONE</span>
+    <span>HELIX_STACK // ACTIVE</span>
+  </div>
+
+  <!-- Full-screen pulse overlay (click bolts/sparks draw here) -->
+  <div class="pulse-overlay" id="pulse-overlay" aria-hidden="true">
+    <canvas id="pulse-canvas"></canvas>
+  </div>
+  <!-- Probe overlay: trend → globe streaks. Always-on (low cost).
+       Sits between the substrate and the pulse overlay so click
+       effects still draw on top of it. -->
+  <canvas class="probe-canvas" id="probe-canvas" aria-hidden="true"></canvas>
+  <div class="pulse-ring" id="pulse-ring" aria-hidden="true"></div>
+  <div class="pulse-ring pulse-ring--2" id="pulse-ring-2" aria-hidden="true"></div>
+
+  <!-- =========================================================
+       MAIN: 3-column dashboard
+       ========================================================= -->
+  <main class="splash">
+
+    <!-- =========================================================
+         LEFT TOP — terminal (boot log + status line)
+         ========================================================= -->
+    <section class="panel panel--lt">
+      <div class="panel-title">
+        <span>TERMINAL // BOOT_LOG</span>
+        <span class="panel-tag" id="term-tag">// COLD</span>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-log" id="terminal-log" aria-live="polite">
+          <!-- Boot lines are injected by splash.js -->
+        </div>
+        <div class="terminal-status">
+          <span class="prompt">&gt;</span>
+          <span class="msg" id="splash-terminal-text">BOOT SEQUENCE INITIATED</span>
+          <span class="caret" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         MIDDLE (full-height column) — image button + power-up bar
+         ========================================================= -->
+    <section class="panel panel--m">
+      <div class="panel-title">
+        <span>PRIMARY INTERFACE</span>
+        <span class="panel-tag">// IGNITION</span>
+      </div>
+
+      <div class="image-stage">
+        <a class="image-button" id="splash-enter-link" href="nav.html"
+           aria-label="Enter the INFO 698 capstone grid">
+          <span class="tick tick--tl" aria-hidden="true"></span>
+          <span class="tick tick--tr" aria-hidden="true"></span>
+          <span class="tick tick--bl" aria-hidden="true"></span>
+          <span class="tick tick--br" aria-hidden="true"></span>
+          <div class="image-button-frame">
+            <img src="assets/CapStone_img_.png" alt="INFO 698 Capstone logo"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div class="image-button-fallback">
+              <i class="ti ti-photo" style="font-size:32px; color:var(--ares-cyan);" aria-hidden="true"></i>
+              <span>LOGO.PNG // LINK</span>
+            </div>
+
+            <!-- ENTERING overlay (revealed when .is-entering on button) -->
+            <div class="splash-entering" aria-live="polite">
+              <div class="splash-entering-icon" aria-hidden="true">
+                <svg viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="22" fill="none"
+                          stroke="#00d9ff" stroke-width="1.5"
+                          stroke-dasharray="20 8 4 8" opacity="0.85"/>
+                  <circle cx="28" cy="28" r="14" fill="none"
+                          stroke="#c8ff00" stroke-width="1"
+                          stroke-dasharray="6 4" opacity="0.7"/>
+                  <circle cx="28" cy="28" r="3" fill="#b026ff"/>
+                </svg>
+              </div>
+              <div class="splash-entering-msg">Entering<span class="splash-entering-dots"><span>.</span><span>.</span><span>.</span></span></div>
+              <div class="splash-entering-sub">// AUTH OK</div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Bottom group: power bar + marquee stay clustered below the image.
+             The image-stage uses justify-content: space-between, so this
+             div is the second flex child (after the button) and pins to
+             the bottom edge of the panel. -->
+        <div class="image-stage-bottom">
+          <!-- Power-up progress bar — segmented; segments injected by splash.js -->
+          <div class="power-bar-wrap" aria-hidden="true">
+            <div class="power-bar-label">
+              <span>POWER UP</span>
+              <span class="pct" id="power-pct">0%</span>
+            </div>
+            <div class="power-bar" id="power-bar"></div>
+            <!-- Large readout — big percentage underneath the bar. -->
+            <div class="power-readout">
+              <span class="power-readout-val" id="power-readout">0%</span>
+            </div>
+          </div>
+
+          <!-- Large flashing grainy marquee — revealed only after the
+               boot sequence completes (body.is-powered).             -->
+          <div class="press-marquee" id="press-marquee" aria-hidden="true">
+            <span class="press-marquee-bracket">&gt;&gt;</span>
+            <span class="press-marquee-text">PRESS INFO 698 TO ENTER</span>
+            <span class="press-marquee-bracket">&lt;&lt;</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         RIGHT TOP — globe
+         ========================================================= -->
+    <section class="panel panel--rt">
+      <div class="panel-title">
+        <span>GLOBE</span>
+        <span class="panel-tag">// GEO_FEED</span>
+      </div>
+      <div class="globe-stage">
+        <canvas id="bullseye-globe" aria-hidden="true"></canvas>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         LEFT BOTTOM — stats
+         ========================================================= -->
+    <section class="panel panel--lb">
+      <div class="panel-title">
+        <span>SESSION STATS</span>
+        <span class="panel-tag">// OPERATOR</span>
+      </div>
+      <div class="stats-list">
+        <div class="stat-row">
+          <span class="label">Cycle</span>
+          <span class="val" id="stat-cycle">SU/26</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Operator</span>
+          <span class="val val--cyan" id="stat-operator">N. HERLING</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Course</span>
+          <span class="val val--cyan" id="stat-course">INFO 698</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Program</span>
+          <span class="val val--purple" id="stat-program">MS DS</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Stack</span>
+          <span class="val" id="stat-stack">HELIX_v0.1</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Status</span>
+          <span class="val" id="stat-status">READY</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         RIGHT BOTTOM — Data ports
+         ---------------------------------------------------------
+         Two data ports. Each one streams its readout from a fixed
+         point on the globe via a sustained beam (drawn on the
+         probe-canvas overlay). Beam locks for ~2s, then re-targets
+         a new globe coordinate. While locked, the readout updates
+         live as if reading from the globe.
+         ========================================================= -->
+    <section class="panel panel--rb" id="trends-panel">
+      <div class="panel-title">
+        <span>DATA PORTS</span>
+        <span class="panel-tag">// BAYES · HYP_SWEEP</span>
+      </div>
+      <div class="widget-grid">
+
+        <!-- PORT_A: Bayesian Beta–Binomial tracker.
+             Each globe scan emits one Bernoulli trial (success = reading
+             above the 50-threshold). The widget maintains a Beta(α, β)
+             posterior, updating α ← α + s, β ← β + f after every scan.
+             Prior drawn as a faint outline; posterior as a filled curve.
+             Posterior mean μ, variance σ², and 95% credible interval are
+             reported in the overlay.                                  -->
+        <div class="widget" data-port="cpu">
+          <div class="widget-head">
+            <span class="widget-label">PORT_A</span>
+            <span class="widget-mode">BAYESIAN // BETA·BINOM</span>
+            <span class="widget-val" data-trend-val="cpu">--</span>
+          </div>
+          <canvas class="widget-canvas" data-widget="bayesian" data-color="cyan"></canvas>
+        </div>
+
+        <!-- PORT_B: Anchored hyperbola + unit-circle sweep.
+             Hyperbola is fixed (a, b drawn from the last scan and held)
+             with a unit circle overlaid at the origin. A radial sweep
+             arm rotates through θ; cos(θ), sec(θ), tan(θ) light up the
+             corresponding circle/hyperbola points. Overlay reports
+             current θ, sec, tan, and sweep statistics.                -->
+        <div class="widget" data-port="mem">
+          <div class="widget-head">
+            <span class="widget-label">PORT_B</span>
+            <span class="widget-mode">HYPERBOLA // SWEEP</span>
+            <span class="widget-val" data-trend-val="mem">--</span>
+          </div>
+          <canvas class="widget-canvas" data-widget="hyperbola" data-color="lime"></canvas>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       Global script error surfacing
+       ======================================================================== -->
+  <script>
+    window.addEventListener('error', function (e) {
+      console.error('[splash]', e.message,
+                    e.filename ? '@ ' + e.filename : '',
+                    e.lineno ? ':' + e.lineno : '');
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      console.error('[splash] promise rejection:',
+                    (e.reason && e.reason.message) || e.reason);
+    });
+  </script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" />
+
+  <!-- ========================================================================
+       3D globe pipeline: Three.js + d3-geo + topojson-client.
+       Data: Natural Earth land-110m.json via world-atlas.
+       d3-array MUST come before d3-geo or d3-geo throws on load.
+       ======================================================================== -->
+  <script crossorigin="anonymous"
+          src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script crossorigin="anonymous"
+          src="https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js"></script>
+  <script crossorigin="anonymous"
+          src="https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js"></script>
+  <script crossorigin="anonymous"
+          src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
+  <!-- Top HUD clock -->
+  <script>
+    (function () {
+      var el = document.getElementById('hud-ts');
+      function p(n){ return n<10 ? '0'+n : ''+n; }
+      function tick() {
+        var d = new Date();
+        if (el) el.textContent =
+          d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate())+
+          ' // '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+        setTimeout(tick, 1000);
+      }
+      tick();
+    })();
+  </script>
+
+  <script src="js/data-loader.js"></script>
+  <script src="js/splash.js"></script>
+
+</body>
+</html>

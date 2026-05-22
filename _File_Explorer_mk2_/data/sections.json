@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "title": "NODE_VAULT // EXPLORER",
+  "default_section": "academic",
+  "sections": [
+    {
+      "id": "academic",
+      "label": "ACADEMIC",
+      "kind": "container",
+      "subtitle": "uarizona / grad-life",
+      "children": [
+        {
+          "id": "ece_admissions",
+          "label": "ECE_ADMISSIONS",
+          "kind": "url",
+          "url": "https://ece.engineering.arizona.edu/grad-programs/admissions",
+          "subtitle": "ua / ece grad"
+        },
+        {
+          "id": "grad_guides",
+          "label": "GRAD_GUIDES",
+          "kind": "url",
+          "url": "https://grad.arizona.edu/admissions-guides/",
+          "subtitle": "ua / grad college"
+        },
+        {
+          "id": "d2l",
+          "label": "D2L",
+          "kind": "url",
+          "url": "https://d2l.arizona.edu/d2l/home",
+          "subtitle": "course lms"
+        },
+        {
+          "id": "zoom_class",
+          "label": "ZOOM_CLASS",
+          "kind": "url",
+          "url": "https://arizona.zoom.us/j/88041897894#success",
+          "subtitle": "live session"
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "label": "LIBRARY",
+      "kind": "container",
+      "subtitle": "papers / texts",
+      "children": [
+        {
+          "id": "fence_formula",
+          "label": "FENCE_TO_FORMULA",
+          "kind": "folder",
+          "subtitle": "original math",
+          "files": [
+            { "name": "fence_to_formula.pdf", "path": "pdfs/fence_to_formula.pdf" }
+          ]
+        },
+        {
+          "id": "r_equiv_cubic",
+          "label": "R-EQUIV_CUBIC_SURFACES",
+          "kind": "folder",
+          "subtitle": "ref paper 2603",
+          "files": [
+            { "name": "2603_R-equivalence_on_Cubic_Surfaces.pdf", "path": "pdfs/2603_R-equivalence_on_Cubic_Surfaces.pdf" }
+          ]
+        },
+        {
+          "id": "ch4_mini",
+          "label": "CH_4_MINI",
+          "kind": "folder",
+          "subtitle": "course chapter",
+          "files": [
+            { "name": "ch_4_mini.pdf", "path": "pdfs/ch_4_mini.pdf" }
+          ]
+        },
+        {
+          "id": "surfaces_collection",
+          "label": "SURFACES_COLLECTION",
+          "kind": "container",
+          "subtitle": "arxiv set (5)",
+          "children": [
+            {
+              "id": "arxiv_1412_6544",
+              "label": "1412.6544",
+              "kind": "folder",
+              "subtitle": "arxiv / v6",
+              "files": [
+                { "name": "1412.6544v6.pdf", "path": "pdfs/0_surfaces_/1412.6544v6.pdf" }
+              ]
+            },
+            {
+              "id": "arxiv_1712_09913",
+              "label": "1712.09913",
+              "kind": "folder",
+              "subtitle": "arxiv / v3",
+              "files": [
+                { "name": "1712.09913v3.pdf", "path": "pdfs/0_surfaces_/1712.09913v3.pdf" }
+              ]
+            },
+            {
+              "id": "arxiv_1803_05407",
+              "label": "1803.05407",
+              "kind": "folder",
+              "subtitle": "arxiv / v3",
+              "files": [
+                { "name": "1803.05407v3.pdf", "path": "pdfs/0_surfaces_/1803.05407v3.pdf" }
+              ]
+            },
+            {
+              "id": "arxiv_1902_02476",
+              "label": "1902.02476",
+              "kind": "folder",
+              "subtitle": "arxiv / v2",
+              "files": [
+                { "name": "1902.02476v2.pdf", "path": "pdfs/0_surfaces_/1902.02476v2.pdf" }
+              ]
+            },
+            {
+              "id": "arxiv_1907_07504",
+              "label": "1907.07504",
+              "kind": "folder",
+              "subtitle": "arxiv / v1",
+              "files": [
+                { "name": "1907.07504v1.pdf", "path": "pdfs/0_surfaces_/1907.07504v1.pdf" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "slp3_jurafsky",
+          "label": "SLP3_JURAFSKY",
+          "kind": "url",
+          "url": "https://web.stanford.edu/~jurafsky/slp3/ed3book_jan26.pdf",
+          "subtitle": "stanford / textbook"
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "label": "NETWORK",
+      "kind": "container",
+      "subtitle": "external presence",
+      "children": [
+        {
+          "id": "linkedin",
+          "label": "LINKEDIN",
+          "kind": "url",
+          "url": "https://www.linkedin.com/in/nathan-herling-618542327/",
+          "subtitle": "n. herling profile"
+        }
+      ]
+    }
+  ]
+}

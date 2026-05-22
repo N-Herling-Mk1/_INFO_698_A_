@@ -1,0 +1,201 @@
+{
+  "comment": "Right-pane content keyed by wheel node id. Each subject has 3 placeholder folders. A folder's content can be either a list of links (docs: [...]) or an inline body string (body: '...'). Edit freely.",
+  "subjects": {
+    "OVR": {
+      "label": "Overview",
+      "color": "#00d9ff",
+      "folders": [
+        {
+          "id": "OVR-A",
+          "label": "Abstract",
+          "subtitle": "Project summary",
+          "body": "Placeholder abstract content. Replace via data/docs.json → subjects.OVR.folders[0].body."
+        },
+        {
+          "id": "OVR-B",
+          "label": "Scope",
+          "subtitle": "In / out",
+          "docs": [
+            { "title": "In-scope items", "href": "pages/overview.html#in-scope" },
+            { "title": "Out-of-scope",   "href": "pages/overview.html#out-of-scope" }
+          ]
+        },
+        {
+          "id": "OVR-C",
+          "label": "Timeline",
+          "subtitle": "Milestones",
+          "body": "Placeholder timeline. Add milestone bullets here."
+        }
+      ]
+    },
+    "MTH": {
+      "label": "Methodology",
+      "color": "#00d9ff",
+      "folders": [
+        {
+          "id": "MTH-A",
+          "label": "Approach",
+          "subtitle": "Design overview",
+          "body": "Placeholder methodology approach text."
+        },
+        {
+          "id": "MTH-B",
+          "label": "Pipeline",
+          "subtitle": "Processing flow",
+          "docs": [
+            { "title": "Stage 1 — Ingest",    "href": "pages/methodology.html#ingest" },
+            { "title": "Stage 2 — Transform", "href": "pages/methodology.html#transform" },
+            { "title": "Stage 3 — Evaluate",  "href": "pages/methodology.html#evaluate" }
+          ]
+        },
+        {
+          "id": "MTH-C",
+          "label": "Validation",
+          "subtitle": "Tests & metrics",
+          "body": "Placeholder validation plan."
+        }
+      ]
+    },
+    "DAT": {
+      "label": "Datasets",
+      "color": "#b026ff",
+      "folders": [
+        {
+          "id": "DAT-A",
+          "label": "Sources",
+          "subtitle": "Where data lives",
+          "docs": [
+            { "title": "Source manifest",  "href": "pages/datasets.html#sources" }
+          ]
+        },
+        {
+          "id": "DAT-B",
+          "label": "Schemas",
+          "subtitle": "Column dictionary",
+          "body": "Placeholder schema documentation."
+        },
+        {
+          "id": "DAT-C",
+          "label": "Licensing",
+          "subtitle": "Use & attribution",
+          "body": "Placeholder licensing notes."
+        }
+      ]
+    },
+    "RES": {
+      "label": "Results",
+      "color": "#c8ff00",
+      "folders": [
+        {
+          "id": "RES-A",
+          "label": "Findings",
+          "subtitle": "Headline results",
+          "body": "Placeholder findings summary."
+        },
+        {
+          "id": "RES-B",
+          "label": "Visuals",
+          "subtitle": "Charts & figures",
+          "docs": [
+            { "title": "Figure set",     "href": "pages/results.html#figures" }
+          ]
+        },
+        {
+          "id": "RES-C",
+          "label": "Metrics",
+          "subtitle": "Quant evaluation",
+          "body": "Placeholder metrics table."
+        }
+      ]
+    },
+    "REP": {
+      "label": "Repo",
+      "color": "#c8ff00",
+      "folders": [
+        {
+          "id": "REP-A",
+          "label": "Source",
+          "subtitle": "GitHub main",
+          "docs": [
+            { "title": "Open repo (new tab)", "href": "https://github.com/your-handle/info698-capstone", "external": true }
+          ]
+        },
+        {
+          "id": "REP-B",
+          "label": "Issues",
+          "subtitle": "Bug tracker",
+          "docs": [
+            { "title": "Issue tracker (new tab)", "href": "https://github.com/your-handle/info698-capstone/issues", "external": true }
+          ]
+        },
+        {
+          "id": "REP-C",
+          "label": "Wiki",
+          "subtitle": "Notes & refs",
+          "docs": [
+            { "title": "Wiki (new tab)", "href": "https://github.com/your-handle/info698-capstone/wiki", "external": true }
+          ]
+        }
+      ]
+    },
+    "DOC": {
+      "label": "Docs",
+      "color": "#c8ff00",
+      "folders": [
+        {
+          "id": "DOC-A",
+          "label": "Write-up",
+          "subtitle": "Main paper",
+          "body": "Placeholder write-up. Replace with paper body or links to PDFs."
+        },
+        {
+          "id": "DOC-B",
+          "label": "Appendices",
+          "subtitle": "Supplementary",
+          "docs": [
+            { "title": "Appendix A — Data tables", "href": "pages/docs.html#appendix-a" },
+            { "title": "Appendix B — References",  "href": "pages/docs.html#appendix-b" }
+          ]
+        },
+        {
+          "id": "DOC-C",
+          "label": "Drafts",
+          "subtitle": "Working copies",
+          "body": "Placeholder drafts folder."
+        }
+      ]
+    },
+    "DCK": {
+      "label": "Deck",
+      "color": "#b026ff",
+      "folders": [
+        {
+          "id": "DCK-A",
+          "label": "Slides",
+          "subtitle": "Presentation deck",
+          "docs": [
+            { "title": "Capstone deck (v1)", "href": "pages/deck.html" }
+          ]
+        },
+        {
+          "id": "DCK-B",
+          "label": "Notes",
+          "subtitle": "Speaker notes",
+          "body": "Placeholder speaker notes."
+        },
+        {
+          "id": "DCK-C",
+          "label": "Demo",
+          "subtitle": "Live walkthrough",
+          "body": "Placeholder demo script."
+        }
+      ]
+    },
+    "D2L": {
+      "label": "D2L",
+      "color": "#b026ff",
+      "external": true,
+      "alert": "D2L opened in a new tab. Log in there with your NetID."
+    }
+  }
+}

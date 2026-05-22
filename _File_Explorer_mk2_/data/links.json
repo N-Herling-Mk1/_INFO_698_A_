@@ -1,0 +1,31 @@
+{
+  "repo": {
+    "github": "https://github.com/your-handle/info698-capstone",
+    "issues": "https://github.com/your-handle/info698-capstone/issues",
+    "wiki":   "https://github.com/your-handle/info698-capstone/wiki"
+  },
+  "documents": {
+    "writeup":      "pages/docs.html",
+    "deck":         "pages/deck.html",
+    "abstractPDF":  "assets/abstract.pdf"
+  },
+  "datasets": [
+    {
+      "name":   "Example Dataset 1",
+      "source": "https://example.org/dataset-1",
+      "format": "CSV",
+      "notes":  "Placeholder — replace with your actual source."
+    },
+    {
+      "name":   "Example Dataset 2",
+      "source": "https://example.org/dataset-2",
+      "format": "Parquet",
+      "notes":  "Placeholder."
+    }
+  ],
+  "contact": {
+    "email":    "operator@example.com",
+    "linkedin": "https://linkedin.com/in/your-handle",
+    "scholar":  "https://scholar.google.com/citations?user=your-id"
+  }
+}

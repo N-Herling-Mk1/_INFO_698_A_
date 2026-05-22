@@ -1,0 +1,59 @@
+{
+  "overview": {
+    "title": "Project Overview",
+    "id": "OVR",
+    "abstract": "Placeholder abstract. Replace with the project synopsis — research question, motivation, scope, and expected contribution.",
+    "objectives": [
+      "Objective 1 — placeholder.",
+      "Objective 2 — placeholder.",
+      "Objective 3 — placeholder."
+    ]
+  },
+  "methodology": {
+    "title": "Methodology",
+    "id": "MTH",
+    "summary": "Placeholder. Describe the methodological approach, frameworks, and key decisions.",
+    "stages": [
+      { "name": "Stage 1 // Data acquisition", "desc": "Placeholder." },
+      { "name": "Stage 2 // Preprocessing",    "desc": "Placeholder." },
+      { "name": "Stage 3 // Modeling",         "desc": "Placeholder." },
+      { "name": "Stage 4 // Evaluation",       "desc": "Placeholder." }
+    ]
+  },
+  "datasets": {
+    "title": "Datasets",
+    "id": "DAT",
+    "summary": "Placeholder. Describe the datasets used, provenance, and any preprocessing applied.",
+    "items": []
+  },
+  "results": {
+    "title": "Results & Visualizations",
+    "id": "RES",
+    "summary": "Placeholder. Key metrics, figures, and findings will go here.",
+    "metrics": [
+      { "label": "Metric A", "value": "—" },
+      { "label": "Metric B", "value": "—" },
+      { "label": "Metric C", "value": "—" }
+    ]
+  },
+  "docs": {
+    "title": "Documentation",
+    "id": "DOC",
+    "summary": "Placeholder. Long-form write-up, references, and supplementary material."
+  },
+  "deck": {
+    "title": "Presentation Deck",
+    "id": "DCK",
+    "summary": "Placeholder. Embed or link the final presentation here.",
+    "slidesURL": ""
+  },
+  "about": {
+    "title": "About the Operator",
+    "id": "ABT",
+    "bio": "Placeholder bio. Replace with your background, research interests, and contact info.",
+    "affiliations": [
+      "University of Arizona // School of Information",
+      "MS Data Science"
+    ]
+  }
+}
