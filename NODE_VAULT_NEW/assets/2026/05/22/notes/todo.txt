@@ -1,0 +1,4 @@
+## TODO BEFORE NEXT MEETING
+[ ] update LinkedIn profile
+[ ] read Lafferty 2001
+[x] submit PA3 final

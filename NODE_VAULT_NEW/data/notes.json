@@ -1,0 +1,116 @@
+[
+  {
+    "id": "NODE-001",
+    "title": "Git Hub Repo - wincc SRTM_Monitor_EC_01",
+    "category": "Physics",
+    "date": "2026-03-05",
+    "preview": "https://github.com/echeu/wincc-srtm",
+    "content": "ITEM:\n- Git hub repo to store a simple project than be used at EMF.\n\n\nDATE:\nThursday-March-05-2026\n\nREPO URL:\nhttps://github.com/echeu/wincc-srtm",
+    "tags": [
+      "physics",
+      "atlas",
+      "SRTM",
+      "GIT HUB"
+    ]
+  },
+  {
+    "id": "NODE-002",
+    "title": "Pelagic-Vocal-mk1 — Offline Pipeline Status",
+    "tags": [
+      "dev",
+      "voice",
+      "pelagic"
+    ],
+    "date": "2026-03-03",
+    "category": "Development",
+    "preview": "openWakeWord → Whisper STT → Piper TTS chain functional. CPU latency ~1.2s round-trip. LLM integration is next phase.",
+    "content": "STACK: openWakeWord → Whisper (base) → Piper TTS\nAll components running fully offline on CPU.\n\nLATENCY BENCHMARKS:\n  Wake word detection  ~40ms\n  STT transcription    ~800ms\n  TTS synthesis        ~300ms\n  Round-trip total     ~1.2s\n\nNEXT MILESTONES:\n  [x] Offline STT+TTS baseline\n  [ ] Local LLM backend (Ollama / llama.cpp)\n  [ ] Electron/HTML5 frontend with visual state\n  [ ] Persistent conversation context\n  [ ] Hardware wake-word button (RPi GPIO)"
+  },
+  {
+    "id": "NODE-003",
+    "title": "KS Comparison Scripts — v6 Findings",
+    "tags": [
+      "physics",
+      "atlas",
+      "pipeline"
+    ],
+    "date": "2026-03-02",
+    "category": "Physics",
+    "preview": "Data vintage differences (2023 CSV vs Run 3 extraction) are the dominant driver of KS failures, not cut mismatches.",
+    "content": "CONCLUSION: The primary cause of KS test failures in the MSVtx cutflow comparison is data vintage mismatch, not incorrect cut logic.\n\nDiptiman's 2023 CSVs were generated with a different sample and slightly different preselection configuration than the current Run 3 extraction via Snapshot after df11.\n\nAFFECTED MASS POINTS:\n  mH125_mS55  (DSID 537839) — investigated ✓\n  mH125_mS35  — pending\n  mH125_mS16  — pending\n  mH125_mS5   — pending\n\nFILES: ~/atlas_nn/0_mk2/0_comparative_hists/\nSCRIPT: ks_compare_v6.py"
+  },
+  {
+    "id": "NODE-004",
+    "title": "INFO 539 — PA2 SMS Spam Classifier",
+    "tags": [
+      "nlp",
+      "coursework",
+      "ml"
+    ],
+    "date": "2026-02-28",
+    "category": "Coursework",
+    "preview": "CountVectorizer(1,2) + LogisticRegression. Key insight: _augment_text meta-tokens + class_weight={0:1,1:10} → F1=0.944.",
+    "content": "FINAL CONFIG:\n  Vectorizer:    CountVectorizer(ngram_range=(1,2))\n  Classifier:    LogisticRegression(C=0.3)\n  Class weight:  {0: 1, 1: 10}  ← critical for recall\n\nPERFORMANCE:\n  F1 (spam):   0.944\n  Accuracy:    0.986\n\nKEY INSIGHT: The _augment_text() meta-token injection\n(e.g. __HAS_URL__, __HAS_PHONE__, __ALL_CAPS__) was the\nsingle biggest performance lever. Raw n-grams alone top\nout around F1=0.88; augmented features break 0.94.\n\nLESSON: Domain-specific feature engineering still beats\nraw vectorization for short-text classification tasks."
+  },
+  {
+    "id": "NODE-005",
+    "title": "TRON Ares RAM Monitor — Heat Map Variants",
+    "tags": [
+      "dev",
+      "qt6",
+      "tron"
+    ],
+    "date": "2026-02-27",
+    "category": "Development",
+    "preview": "Evaluating four heat map display modes: A=radial thermal field, B=memory block grid, C=heat strip history, D=hybrid.",
+    "content": "HEAT MAP VARIANTS UNDER EVALUATION:\n\n  A — Radial Thermal Field\n      Circular gradient from center; intensity = RAM %\n      Looks great but less information-dense\n\n  B — Memory Block Grid\n      NxN grid of cells, each cell = memory page bucket\n      Most data-rich; closest to actual memory map\n\n  C — Heat Strip History\n      Horizontal time-series of usage intensity bars\n      Good for detecting usage spikes over time\n\n  D — Hybrid\n      Block grid (B) overlaid on radial glow (A)\n      Visually the strongest; performance cost?\n\nCURRENT STATUS: Prototyping B and D in parallel.\nMVC pattern confirmed working. PyQt6 border thickness\nand hover button state resolved in last session."
+  },
+  {
+    "id": "NODE-006",
+    "title": "Fence Method — Cubic Root Bounds",
+    "tags": [
+      "math",
+      "cubic",
+      "derivation"
+    ],
+    "date": "2026-02-20",
+    "category": "Mathematics",
+    "preview": "r₁=−2a parameterization → fence bounds → absorption substitution u=t−p/(3t). Root-level approaches are circular; absorption transforms the polynomial itself.",
+    "content": "CORE INSIGHT: Attempting to bound roots directly is circular\n(you need the roots to find the bounds). The fence method \nsidesteps this by parameterizing with r₁ = −2a, then using \nthe absorption substitution u = t − p/(3t) to transform \nthe polynomial rather than its roots.\n\nTHEOREM 1 (Fence Bound, real roots):\n  Given t³ + pt + q = 0 with 3 real roots,\n  the fence r₁ = −2√(−p/3) gives:\n    r₁ ≤ x_min  and  x_max ≤ −r₁/2\n\nTHEOREM 2 (Sandwich Bound, complex roots):\n  For the complex pair α ± βi:\n    |α| ≤ (|q|/|a|)^(1/2)\n\nGEOMETRIC CONNECTION:\n  Via Viète's trig solution, the fence bounds correspond\n  to the extrema of cos³θ, linking the algebraic and \n  trigonometric derivations.\n\nPDF: fence_to_formula.pdf"
+  },
+  {
+    "id": "NODE-007",
+    "title": "Bayesian HMC Sweep — Best Configs",
+    "tags": [
+      "physics",
+      "ml",
+      "bayesian"
+    ],
+    "date": "2026-02-15",
+    "category": "Physics",
+    "preview": "nn2_barrel config #75 (single 512, AUC 0.9359) and nn1_endcap config #45 (bottleneck 128-64-128, AUC 0.8610) are top performers.",
+    "content": "HYPERPARAMETER SWEEP RESULTS — v5/v6 calibration\n\nBEST CONFIGS:\n  nn2_barrel   config #75   single 512            AUC 0.9359  ★\n  nn1_endcap   config #45   bottleneck 128-64-128  AUC 0.8610\n\nARCHITECTURES TESTED:\n  cone | bottleneck | single | pyramid\n  across nn1/nn2 × barrel/endcap\n\nRRM PENALTY VECTOR:\n  v = [1 − AUC,  σ_k/σ_max,  U/U_max]\n  where σ_k = k-fold variance, U = HMC posterior spread\n\nPOSSIBLE 4D EXTENSION:\n  Add ABCD closure quality as 4th penalty dimension.\n  Would require running the full ABCD background estimation\n  first — currently still TODO."
+  },
+  {
+    "id": "NODE-008",
+    "title": "Solar Flare Visualization — Canvas Architecture",
+    "tags": [
+      "dev",
+      "canvas",
+      "visualization"
+    ],
+    "date": "2026-02-10",
+    "category": "Development",
+    "preview": "HTML5 Canvas solar viz with granular surface, color palettes, prominence eruptions, flare spots, border haze slider, zoom widget.",
+    "content": "COMPONENT ARCHITECTURE:\n  Layer 0 — Background star field (static, pre-rendered)\n  Layer 1 — Solar disc with granular surface texture\n  Layer 2 — Chromosphere haze (adjustable intensity)\n  Layer 3 — Prominence eruptions (physics-based arcs)\n  Layer 4 — Flare spots (UV/X-ray color mapping)\n  Layer 5 — Corona (radial decay, color palette driven)\n\nAUDIO REACTIVE MAPPING:\n  ΔRMS         → limb brightness pulse\n  Low band     → corona expansion radius\n  Mid band     → haze opacity\n  High band    → flare spot spawn rate\n  Transients   → prominence eruption trigger\n\nCONTROLS:\n  border haze slider — corona/chromosphere blend\n  zoom widget        — canvas scale + pan\n  palette selector   — SDO AIA / SOHO EIT / custom\n\nSTATUS: Prominence eruption physics needs damping fix.\nCorona radial decay tuning in progress."
+  },
+  {
+    "id": "NODE-009",
+    "title": "Test ..",
+    "category": "Test Node",
+    "date": "2026-03-06",
+    "preview": "Testing ...",
+    "content": "Guess what?\nTesting ....\n.\nStill Testing ...\n.\n.\n",
+    "tags": []
+  }
+]

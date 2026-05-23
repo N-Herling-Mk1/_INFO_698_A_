@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODES // EDIT MODE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --c:#00e5ff;--cd:rgba(0,229,255,0.22);--cg:rgba(0,229,255,0.08);
+  --o:#ff6d00;--og:rgba(255,109,0,0.15);
+  --bg:#000810;--bg2:#000d1a;--bg3:#001222;
+  --txt:#c8f0f8;--dim:#5ab8cc;--dim2:#1e5060;
+  --ok:#00ffb3;--fail:#ff3366;
+  --grid:rgba(0,229,255,0.06);
+}
+body.ares{
+  --c:#ff2200;--cd:rgba(255,34,0,0.28);--cg:rgba(255,34,0,0.09);
+  --o:#ff7700;--og:rgba(255,119,0,0.18);
+  --bg:#080000;--bg2:#100000;--bg3:#160200;
+  --txt:#ffb89a;--dim:#d06040;--dim2:#5a1a08;
+  --ok:#ff6600;--fail:#ff0044;
+  --grid:rgba(255,34,0,0.06);
+}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;
+  height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.1) 3px,rgba(0,0,0,0.1) 4px);
+  pointer-events:none;z-index:9999;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* ── CORNERS ── */
+.cdec{position:fixed;width:38px;height:38px;pointer-events:none;z-index:30;}
+.cdec.tl{top:0;left:0;border-top:1.5px solid var(--c);border-left:1.5px solid var(--c);}
+.cdec.tr{top:0;right:0;border-top:1.5px solid var(--c);border-right:1.5px solid var(--c);}
+.cdec.bl{bottom:0;left:0;border-bottom:1.5px solid var(--c);border-left:1.5px solid var(--c);}
+.cdec.br{bottom:0;right:0;border-bottom:1.5px solid var(--c);border-right:1.5px solid var(--c);}
+
+/* ── HEADER — matches view.html ── */
+.mhdr{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:100px;border-bottom:1px solid var(--dim);
+  background:rgba(0,8,16,.97);flex-shrink:0;}
+.mhdr-left{display:flex;flex-direction:column;justify-content:center;gap:6px;}
+.mhdr-logo{font-family:'Orbitron',monospace;font-size:1.9rem;font-weight:900;letter-spacing:.4em;
+  color:var(--c);text-shadow:0 0 22px var(--c),0 0 50px rgba(0,229,255,.15);
+  text-decoration:none;cursor:pointer;}
+.mhdr-logo:hover{text-shadow:0 0 36px var(--c),0 0 80px rgba(0,229,255,.25);}
+.hdr-mode{font-size:.5rem;letter-spacing:.38em;color:var(--o);padding:3px 10px;
+  border:1px solid var(--o);white-space:nowrap;align-self:flex-start;
+  clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));}
+.mhdr-center{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.mhdr-stat{display:flex;gap:20px;font-size:.78rem;letter-spacing:.15em;color:var(--txt);align-items:center;}
+.stat-dot{width:10px;height:10px;border-radius:50%;background:var(--o);
+  box-shadow:0 0 10px var(--o),0 0 22px var(--o);
+  display:inline-block;margin-right:8px;animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+.theme-toggle{display:flex;border:1px solid var(--dim2);overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+.tt-btn{padding:8px 28px;font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;
+  letter-spacing:.25em;cursor:pointer;border:none;background:transparent;color:var(--dim);transition:all .15s;}
+.tt-btn.on{background:var(--cd);color:var(--c);text-shadow:0 0 12px var(--c);}
+.tt-btn:hover:not(.on){color:var(--txt);background:rgba(255,255,255,.04);}
+.hdr-ctrl-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.hdr-sep{width:1px;height:22px;background:var(--dim2);flex-shrink:0;}
+.mhdr-right{display:flex;align-items:center;}
+#laser-cv{display:block;}
+
+/* ── HEADER BUTTONS ── */
+.hbtn{font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:.2em;
+  padding:7px 16px;border:1px solid var(--dim2);color:var(--dim);
+  background:transparent;cursor:pointer;white-space:nowrap;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));
+  transition:color .15s,border-color .15s,background .15s,box-shadow .15s;}
+.hbtn:hover{border-color:var(--c);color:var(--c);background:rgba(0,229,255,.07);
+  box-shadow:0 0 16px rgba(0,229,255,.25);}
+.hbtn.new{border-color:var(--ok);color:var(--ok);}
+.hbtn.new:hover{color:#fff;background:rgba(0,255,179,.12);
+  box-shadow:0 0 24px rgba(0,255,179,.45);}
+.hbtn.save{border-color:var(--c);color:var(--c);}
+.hbtn.save:hover{color:#fff;background:rgba(0,229,255,.14);
+  box-shadow:0 0 28px rgba(0,229,255,.55);}
+.hbtn.discard:hover{border-color:var(--dim);color:var(--txt);background:rgba(255,255,255,.04);box-shadow:none;}
+.hbtn.del:hover{border-color:var(--fail);color:var(--fail);background:rgba(255,51,102,.1);
+  box-shadow:0 0 22px rgba(255,51,102,.4);}
+.hbtn.viewer{border-color:var(--o);color:var(--o);}
+.hbtn.viewer:hover{color:#fff;background:rgba(255,109,0,.12);
+  box-shadow:0 0 24px rgba(255,109,0,.5);}
+.hbtn.lock:hover{border-color:var(--fail);color:var(--fail);}
+.hbtn.ctx{opacity:0;pointer-events:none;
+  transition:opacity .2s,color .15s,border-color .15s,background .15s,box-shadow .15s;}
+.hbtn.ctx.visible{opacity:1;pointer-events:all;}
+
+/* ── STATUS BAR ── */
+.status-bar{position:relative;z-index:10;display:flex;align-items:center;
+  justify-content:space-between;padding:4px 20px;border-bottom:1px solid var(--dim2);
+  background:rgba(0,0,0,.5);font-size:.56rem;letter-spacing:.18em;flex-shrink:0;}
+.save-status{color:var(--dim);transition:all .3s;}
+.save-status.saved{color:var(--ok);text-shadow:0 0 8px var(--ok);}
+.save-status.unsaved{color:var(--o);}
+.save-status.error{color:var(--fail);}
+
+/* ── BODY LAYOUT ── */
+.body{position:relative;z-index:10;display:flex;flex:1;overflow:hidden;}
+
+/* ── NOTE LIST ── */
+.nlist{width:260px;flex-shrink:0;border-right:1px solid var(--dim);overflow-y:auto;
+  background:rgba(0,8,16,.9);display:flex;flex-direction:column;}
+.nlist-hdr{padding:10px 14px;font-size:.54rem;letter-spacing:.3em;color:var(--dim);
+  border-bottom:1px solid var(--dim2);display:flex;align-items:center;justify-content:space-between;}
+.nl-item{padding:11px 14px;border-bottom:1px solid var(--dim2);cursor:pointer;
+  transition:all .15s;position:relative;}
+.nl-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--c);opacity:0;transition:opacity .15s;}
+.nl-item:hover{background:var(--cg);}
+.nl-item.active{background:var(--cg);}
+.nl-item.active::before{opacity:1;}
+.ni-id{font-size:.5rem;color:var(--dim);letter-spacing:.18em;font-family:'Orbitron',monospace;margin-bottom:3px;}
+.ni-title{font-size:.72rem;color:var(--txt);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ni-cat{font-size:.5rem;color:var(--dim);margin-top:4px;letter-spacing:.1em;}
+
+/* ── EDITOR PANEL ── */
+.epanel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.epanel-empty{flex:1;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;}
+.epanel-empty .big{font-family:'Orbitron',monospace;font-size:1rem;letter-spacing:.3em;color:var(--dim2);}
+.epanel-empty .sub{font-size:.6rem;letter-spacing:.2em;color:var(--dim2);}
+.eform{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:22px;gap:14px;}
+.frow{display:flex;gap:12px;}
+.fgroup{display:flex;flex-direction:column;gap:5px;flex:1;}
+.fgroup.w2{flex:2;}
+.flabel{font-size:.53rem;letter-spacing:.28em;color:var(--dim);}
+.finput{background:var(--bg2);border:1px solid var(--dim2);color:var(--txt);
+  font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 12px;
+  outline:none;transition:border-color .15s,box-shadow .15s;width:100%;}
+.finput:focus{border-color:var(--c);box-shadow:0 0 0 1px var(--cd),0 0 12px rgba(0,229,255,.1);}
+.finput::placeholder{color:var(--dim2);}
+textarea.finput{resize:vertical;min-height:72px;line-height:1.7;}
+textarea.finput.tall{min-height:260px;}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:5px;padding:6px 10px;
+  background:var(--bg2);border:1px solid var(--dim2);transition:border-color .15s;min-height:38px;}
+.tag-wrap:focus-within{border-color:var(--c);}
+.tpill{display:flex;align-items:center;gap:5px;padding:2px 8px;
+  border:1px solid var(--dim);font-size:.58rem;color:var(--txt);background:var(--bg3);}
+.tpill span{cursor:pointer;color:var(--dim);transition:color .1s;}
+.tpill span:hover{color:var(--fail);}
+.tag-input{background:transparent;border:none;outline:none;color:var(--txt);
+  font-family:'Share Tech Mono',monospace;font-size:.72rem;min-width:80px;flex:1;}
+
+/* ── DELETE MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,2,8,.9);z-index:500;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal{background:var(--bg2);border:1px solid var(--fail);padding:32px;max-width:420px;width:90%;
+  clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px));
+  box-shadow:0 0 40px rgba(255,51,102,.15);}
+.modal-title{font-family:'Orbitron',monospace;font-size:.9rem;color:var(--fail);letter-spacing:.2em;margin-bottom:12px;}
+.modal-body{font-size:.72rem;color:var(--txt);line-height:1.6;margin-bottom:22px;}
+.modal-id{color:var(--c);font-family:'Orbitron',monospace;}
+.modal-acts{display:flex;gap:10px;justify-content:flex-end;}
+.modal-btn{font-family:'Share Tech Mono',monospace;font-size:.62rem;letter-spacing:.2em;
+  padding:7px 18px;border:1px solid var(--dim2);color:var(--dim);background:transparent;cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));transition:all .15s;}
+.modal-btn:hover{border-color:var(--txt);color:var(--txt);}
+.modal-btn.danger{border-color:var(--fail);color:var(--fail);}
+.modal-btn.danger:hover{background:rgba(255,51,102,.1);box-shadow:0 0 16px rgba(255,51,102,.3);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;right:22px;z-index:600;padding:9px 18px;
+  border:1px solid var(--ok);background:rgba(0,255,179,.06);color:var(--ok);
+  font-size:.63rem;letter-spacing:.18em;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+  transform:translateY(14px);opacity:0;transition:all .3s;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{border-color:var(--fail);background:rgba(255,51,102,.07);color:var(--fail);}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--dim2);}
+::-webkit-scrollbar-thumb:hover{background:var(--c);}
+</style>
+</head>
+<body>
+<div class="cdec tl"></div><div class="cdec tr"></div>
+<div class="cdec bl"></div><div class="cdec br"></div>
+
+<!-- ═══ HEADER ═══ -->
+<div class="mhdr">
+  <div class="mhdr-left">
+    <a class="mhdr-logo" href="view.html" title="Back to viewer">NODES</a>
+    <div class="hdr-mode">EDIT MODE</div>
+  </div>
+  <div class="mhdr-center">
+    <div class="mhdr-stat">
+      <span><span class="stat-dot"></span>LOCAL SERVER</span>
+      <span id="hdr-date"></span>
+      <span id="hdr-count">— NODES</span>
+    </div>
+    <div class="theme-toggle">
+      <button class="tt-btn on" id="tt-classic" onclick="setTheme('classic')">CLASSIC</button>
+      <button class="tt-btn"    id="tt-ares"    onclick="setTheme('ares')">ARES</button>
+    </div>
+    <div class="hdr-ctrl-row">
+      <button class="hbtn new"                onclick="newNote()">+ NEW NODE</button>
+      <div class="hdr-sep"></div>
+      <button class="hbtn save    ctx" id="btn-save"    onclick="saveNote()">SAVE</button>
+      <button class="hbtn discard ctx" id="btn-discard" onclick="discardChanges()">DISCARD</button>
+      <button class="hbtn del     ctx" id="btn-delete"  onclick="confirmDelete()">DELETE</button>
+      <div class="hdr-sep"></div>
+      <button class="hbtn viewer"             onclick="window.location.href='view.html'">VIEWER</button>
+      <button class="hbtn lock"               onclick="lock()">LOCK</button>
+      <button class="hbtn"                    onclick="location.reload()">RELOAD</button>
+    </div>
+  </div>
+  <div class="mhdr-right">
+    <canvas id="laser-cv" width="260" height="84"></canvas>
+  </div>
+</div>
+
+<!-- ═══ STATUS BAR ═══ -->
+<div class="status-bar">
+  <div class="save-status" id="save-status">● CONNECTING…</div>
+  <div id="notes-count" style="color:var(--dim);">— NODES</div>
+</div>
+
+<!-- ═══ BODY ═══ -->
+<div class="body">
+  <div class="nlist">
+    <div class="nlist-hdr">
+      <span>ALL NODES</span><span id="list-count">—</span>
+    </div>
+    <div id="nl-items"></div>
+  </div>
+  <div class="epanel" id="epanel">
+    <div class="epanel-empty" id="epanel-empty">
+      <div class="big">SELECT A NODE</div>
+      <div class="sub">or click  + NEW NODE</div>
+    </div>
+    <div class="eform" id="eform" style="display:none;">
+      <div class="frow">
+        <div class="fgroup">
+          <div class="flabel">NODE ID</div>
+          <input class="finput" id="f-id" placeholder="AUTO" />
+        </div>
+        <div class="fgroup w2">
+          <div class="flabel">TITLE</div>
+          <input class="finput" id="f-title" placeholder="Note title…" />
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fgroup">
+          <div class="flabel">CATEGORY</div>
+          <input class="finput" id="f-category" placeholder="e.g. Physics" />
+        </div>
+        <div class="fgroup">
+          <div class="flabel">DATE</div>
+          <input class="finput" id="f-date" type="date" />
+        </div>
+      </div>
+      <div class="fgroup">
+        <div class="flabel">TAGS &nbsp;<span style="font-size:.5rem;letter-spacing:.05em;">(Enter to add)</span></div>
+        <div class="tag-wrap" id="tag-wrap" onclick="document.getElementById('tag-inp').focus()">
+          <input class="tag-input" id="tag-inp" placeholder="add tag…" />
+        </div>
+      </div>
+      <div class="fgroup">
+        <div class="flabel">PREVIEW <span style="font-size:.5rem;letter-spacing:.05em;">(card summary)</span></div>
+        <textarea class="finput" id="f-preview" rows="2" placeholder="One-line summary…"></textarea>
+      </div>
+      <div class="fgroup" style="flex:1;">
+        <div class="flabel">CONTENT</div>
+        <textarea class="finput tall" id="f-content" placeholder="Full note content…"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DELETE MODAL ═══ -->
+<div class="modal-bg" id="del-modal">
+  <div class="modal">
+    <div class="modal-title">CONFIRM DELETE</div>
+    <div class="modal-body">Permanently remove node <span class="modal-id" id="del-modal-id">—</span>?<br>This cannot be undone.</div>
+    <div class="modal-acts">
+      <button class="modal-btn" onclick="closeModal()">CANCEL</button>
+      <button class="modal-btn danger" onclick="deleteNote()">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// edit.html is local-only — no auth gate.
+
+// ══ THEME ════════════════════════════════
+let currentTheme = sessionStorage.getItem('nodes_theme') || 'classic';
+function setTheme(t) {
+  currentTheme = t;
+  document.body.classList.toggle('ares', t === 'ares');
+  document.getElementById('tt-classic').classList.toggle('on', t === 'classic');
+  document.getElementById('tt-ares').classList.toggle('on',    t === 'ares');
+  sessionStorage.setItem('nodes_theme', t);
+}
+// Apply on load
+if (currentTheme === 'ares') document.body.classList.add('ares');
+document.getElementById('tt-classic').classList.toggle('on', currentTheme === 'classic');
+document.getElementById('tt-ares').classList.toggle('on',    currentTheme === 'ares');
+
+// ══ LOCK ══════════════════════════════════
+function lock() {
+  if (dirty && !confirm('Unsaved changes — lock anyway?')) return;
+  sessionStorage.removeItem('nodes_auth');
+  window.location.href = 'index.html';
+}
+
+// ══ STATE ════════════════════════════════
+const API = 'http://localhost:5000';
+let notes = [], activeId = null, pendingTags = [], dirty = false;
+
+// ══ CONTEXT BUTTONS ══════════════════════
+function setCtxVisible(v) {
+  ['btn-save','btn-discard','btn-delete'].forEach(id => {
+    document.getElementById(id).classList.toggle('visible', v);
+  });
+}
+
+// ══ LOAD NOTES ═══════════════════════════
+async function loadNotes() {
+  try {
+    const r = await fetch(`${API}/notes`);
+    if (!r.ok) throw new Error('bad response');
+    notes = await r.json();
+    renderList();
+    setSaveStatus('saved', `● CONNECTED  ·  ${notes.length} nodes loaded`);
+    document.getElementById('notes-count').textContent = `${notes.length} NODES`;
+  } catch(e) {
+    setSaveStatus('error', '✕ CANNOT REACH SERVER  ·  is nodes_server.py running?');
+    document.getElementById('notes-count').textContent = 'SERVER OFFLINE';
+  }
+}
+
+// ══ LIST ══════════════════════════════════
+function renderList() {
+  const c = document.getElementById('nl-items');
+  document.getElementById('list-count').textContent = notes.length;
+  document.getElementById('hdr-count').textContent  = `${notes.length} NODES`;
+  c.innerHTML = '';
+  notes.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'nl-item' + (n.id === activeId ? ' active' : '');
+    d.innerHTML = `<div class="ni-id">${n.id}</div>
+      <div class="ni-title">${n.title || '(untitled)'}</div>
+      <div class="ni-cat">${n.category || ''}</div>`;
+    d.onclick = () => selectNote(n.id);
+    c.appendChild(d);
+  });
+}
+
+// ══ SELECT / FORM ═════════════════════════
+function selectNote(id) {
+  if (dirty && !confirm('Discard unsaved changes?')) return;
+  activeId = id; dirty = false;
+  const n = notes.find(x => x.id === id); if (!n) return;
+  showForm();
+  document.getElementById('f-id').value       = n.id       || '';
+  document.getElementById('f-title').value    = n.title    || '';
+  document.getElementById('f-category').value = n.category || '';
+  document.getElementById('f-date').value     = n.date     || '';
+  document.getElementById('f-preview').value  = n.preview  || '';
+  document.getElementById('f-content').value  = n.content  || '';
+  pendingTags = [...(n.tags || [])];
+  renderTags(); renderList(); watchChanges();
+}
+
+function showForm() {
+  document.getElementById('epanel-empty').style.display = 'none';
+  document.getElementById('eform').style.display        = 'flex';
+  setCtxVisible(true);
+}
+function hideForm() {
+  document.getElementById('epanel-empty').style.display = 'flex';
+  document.getElementById('eform').style.display        = 'none';
+  setCtxVisible(false);
+}
+function watchChanges() {
+  ['f-title','f-category','f-date','f-preview','f-content','f-id'].forEach(id => {
+    document.getElementById(id).oninput = markDirty;
+  });
+}
+function markDirty() { dirty = true; setSaveStatus('unsaved','● UNSAVED CHANGES'); }
+
+// ══ TAGS ══════════════════════════════════
+function renderTags() {
+  const wrap = document.getElementById('tag-wrap');
+  const inp  = document.getElementById('tag-inp');
+  wrap.querySelectorAll('.tpill').forEach(p => p.remove());
+  pendingTags.forEach((t, i) => {
+    const p = document.createElement('div');
+    p.className = 'tpill';
+    p.innerHTML = `${t}<span onclick="removeTag(${i})">✕</span>`;
+    wrap.insertBefore(p, inp);
+  });
+}
+function removeTag(i) { pendingTags.splice(i,1); renderTags(); markDirty(); }
+document.getElementById('tag-inp').addEventListener('keydown', e => {
+  const v = e.target.value.trim();
+  if ((e.key === 'Enter' || e.key === ',') && v) {
+    e.preventDefault(); pendingTags.push(v); e.target.value = ''; renderTags(); markDirty();
+  }
+  if (e.key === 'Backspace' && !v && pendingTags.length) {
+    pendingTags.pop(); renderTags(); markDirty();
+  }
+});
+
+// ══ NEW NOTE ══════════════════════════════
+function newNote() {
+  if (dirty && !confirm('Discard unsaved changes?')) return;
+  activeId = '__new__'; dirty = false; showForm();
+  document.getElementById('f-id').value       = '';
+  document.getElementById('f-title').value    = '';
+  document.getElementById('f-category').value = '';
+  document.getElementById('f-date').value     = new Date().toISOString().slice(0,10);
+  document.getElementById('f-preview').value  = '';
+  document.getElementById('f-content').value  = '';
+  pendingTags = []; renderTags(); renderList();
+  document.getElementById('f-title').focus();
+  watchChanges();
+}
+
+// ══ SAVE ══════════════════════════════════
+async function saveNote() {
+  const payload = {
+    id:       document.getElementById('f-id').value.trim(),
+    title:    document.getElementById('f-title').value.trim(),
+    category: document.getElementById('f-category').value.trim(),
+    date:     document.getElementById('f-date').value,
+    preview:  document.getElementById('f-preview').value.trim(),
+    content:  document.getElementById('f-content').value,
+    tags:     pendingTags,
+  };
+  if (!payload.title) { showToast('Title required', true); return; }
+  try {
+    let r, saved;
+    if (activeId === '__new__' || !activeId) {
+      r     = await fetch(`${API}/notes`, { method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      saved = await r.json();
+      notes.push(saved); activeId = saved.id;
+    } else {
+      if (!payload.id) payload.id = activeId;
+      r     = await fetch(`${API}/notes/${activeId}`, { method:'PUT',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      saved = await r.json();
+      const idx = notes.findIndex(n => n.id === activeId);
+      notes[idx] = saved; activeId = saved.id;
+    }
+    dirty = false;
+    document.getElementById('f-id').value = saved.id;
+    renderList();
+    document.getElementById('notes-count').textContent = `${notes.length} NODES`;
+    setSaveStatus('saved', `✓ SAVED  ·  ${saved.id}`);
+    showToast(`${saved.id} saved`);
+  } catch(e) {
+    setSaveStatus('error','✕ SAVE FAILED');
+    showToast('Save failed', true);
+  }
+}
+
+// ══ DISCARD ═══════════════════════════════
+function discardChanges() {
+  if (activeId === '__new__') { activeId = null; dirty = false; hideForm(); return; }
+  selectNote(activeId); dirty = false; setSaveStatus('saved','● REVERTED');
+}
+
+// ══ DELETE ════════════════════════════════
+function confirmDelete() {
+  if (!activeId || activeId === '__new__') return;
+  document.getElementById('del-modal-id').textContent = activeId;
+  document.getElementById('del-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('del-modal').classList.remove('open'); }
+async function deleteNote() {
+  closeModal();
+  try {
+    await fetch(`${API}/notes/${activeId}`, { method:'DELETE' });
+    notes = notes.filter(n => n.id !== activeId);
+    activeId = null; dirty = false;
+    renderList(); hideForm();
+    document.getElementById('notes-count').textContent = `${notes.length} NODES`;
+    setSaveStatus('saved', `● CONNECTED  ·  ${notes.length} nodes`);
+    showToast('Node deleted');
+  } catch(e) { showToast('Delete failed', true); }
+}
+
+// ══ UTILS ════════════════════════════════
+function setSaveStatus(state, msg) {
+  const el = document.getElementById('save-status');
+  el.className = 'save-status ' + state;
+  el.textContent = msg;
+}
+let toastTimer;
+function showToast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// Ctrl/Cmd+S to save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveNote(); }
+});
+
+// ══ LASER ETCH WIDGET ════════════════════
+function startLaser() {
+  const cv = document.getElementById('laser-cv');
+  if (!cv || cv._running) return;
+  cv._running = true;
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  const TRACES = [
+    [8,8,252,8],[8,76,252,76],[8,8,8,76],[252,8,252,76],
+    [40,8,40,24],[40,24,72,24],[72,24,72,8],
+    [48,24,48,36],[56,24,56,36],[64,24,64,36],
+    [104,8,104,28],[104,28,148,28],[148,28,148,8],
+    [112,28,112,44],[120,28,120,44],[128,28,128,44],[136,28,136,44],[144,28,144,44],
+    [184,8,184,24],[184,24,220,24],[220,24,220,8],
+    [192,24,192,36],[200,24,200,36],[208,24,208,36],
+    [40,76,40,60],[40,60,72,60],[72,60,72,76],
+    [48,60,48,48],[56,60,56,48],[64,60,64,48],
+    [184,76,184,60],[184,60,220,60],[220,60,220,76],
+    [192,60,192,48],[200,60,200,48],[208,60,208,48],
+    [8,44,96,44],[160,44,252,44],
+    [96,44,104,36],[148,36,160,44],
+    [126,44,126,28],[126,44,126,60],[126,60,126,76],
+    [24,8,24,20],[24,20,36,20],[236,8,236,20],[236,20,248,20],
+    [24,76,24,64],[24,64,36,64],[236,76,236,64],[236,64,248,64],
+  ];
+  const VIAS = [
+    [8,8],[252,8],[8,76],[252,76],[40,8],[72,8],[104,8],[148,8],[184,8],[220,8],
+    [40,76],[72,76],[184,76],[220,76],[48,36],[56,36],[64,36],[192,36],[200,36],[208,36],
+    [48,48],[56,48],[64,48],[192,48],[200,48],[208,48],
+    [112,44],[120,44],[128,44],[136,44],[144,44],[126,44],[126,60],[96,44],[160,44],
+  ];
+  const off = document.createElement('canvas');
+  off.width = W; off.height = H;
+  const octx = off.getContext('2d');
+  const etched = new Array(TRACES.length).fill(false);
+  let ti = 0, prog = 0, t0 = null;
+  const SPD = 180;
+  function gc(a) { return document.body.classList.contains('ares') ? `rgba(255,100,0,${a})` : `rgba(0,229,255,${a})`; }
+  function gv(a) { return document.body.classList.contains('ares') ? `rgba(255,180,0,${a})` : `rgba(0,255,179,${a})`; }
+  function redraw() {
+    octx.clearRect(0,0,W,H);
+    octx.fillStyle = document.body.classList.contains('ares') ? 'rgba(30,5,0,0.4)' : 'rgba(0,20,10,0.4)';
+    octx.fillRect(0,0,W,H);
+    TRACES.forEach(([x1,y1,x2,y2],i) => {
+      if (!etched[i]) return;
+      octx.beginPath(); octx.moveTo(x1,y1); octx.lineTo(x2,y2);
+      octx.strokeStyle = gc(0.55); octx.lineWidth = 1.5; octx.stroke();
+      octx.beginPath(); octx.moveTo(x1,y1); octx.lineTo(x2,y2);
+      octx.strokeStyle = gc(0.15); octx.lineWidth = 4;   octx.stroke();
+    });
+    if (ti < TRACES.length) {
+      const [x1,y1,x2,y2] = TRACES[ti];
+      const px = x1+(x2-x1)*prog, py = y1+(y2-y1)*prog;
+      octx.beginPath(); octx.moveTo(x1,y1); octx.lineTo(px,py);
+      octx.strokeStyle = gc(0.55); octx.lineWidth = 1.5; octx.stroke();
+      octx.beginPath(); octx.moveTo(x1,y1); octx.lineTo(px,py);
+      octx.strokeStyle = gc(0.15); octx.lineWidth = 4;   octx.stroke();
+    }
+    VIAS.forEach(([vx,vy]) => {
+      octx.beginPath(); octx.arc(vx,vy,2.5,0,Math.PI*2);
+      octx.fillStyle = gv(0.8); octx.fill();
+      octx.strokeStyle = gc(0.5); octx.lineWidth = 1; octx.stroke();
+    });
+  }
+  function frame(ts) {
+    if (!t0) t0 = ts;
+    const dt = (ts-t0)/1000; t0 = ts;
+    if (ti < TRACES.length) {
+      const [x1,y1,x2,y2] = TRACES[ti];
+      const len = Math.hypot(x2-x1,y2-y1) || 1;
+      prog += (SPD*dt)/len;
+      if (prog >= 1) { etched[ti]=true; prog=0; ti++; if (ti>=TRACES.length){ti=0;etched.fill(false);} }
+    }
+    redraw(); ctx.clearRect(0,0,W,H); ctx.drawImage(off,0,0);
+    if (ti < TRACES.length) {
+      const [x1,y1,x2,y2] = TRACES[ti];
+      const lx = x1+(x2-x1)*prog, ly = y1+(y2-y1)*prog;
+      const bloom = ctx.createRadialGradient(lx,ly,0,lx,ly,14);
+      bloom.addColorStop(0,gc(0.9)); bloom.addColorStop(0.4,gc(0.4)); bloom.addColorStop(1,gc(0));
+      ctx.fillStyle = bloom; ctx.beginPath(); ctx.arc(lx,ly,14,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.beginPath(); ctx.arc(lx,ly,2,0,Math.PI*2); ctx.fill();
+      const trail = ctx.createLinearGradient(
+        x1+(x2-x1)*Math.max(0,prog-.15), y1+(y2-y1)*Math.max(0,prog-.15), lx, ly);
+      trail.addColorStop(0,gc(0)); trail.addColorStop(1,gc(0.6));
+      ctx.beginPath();
+      ctx.moveTo(x1+(x2-x1)*Math.max(0,prog-.15), y1+(y2-y1)*Math.max(0,prog-.15));
+      ctx.lineTo(lx,ly); ctx.strokeStyle = trail; ctx.lineWidth = 2; ctx.stroke();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ══ BOOT ══════════════════════════════════
+document.getElementById('hdr-date').textContent =
+  new Date().toISOString().slice(0,10).replace(/-/g,'.');
+loadNotes();
+startLaser();
+</script>
+</body>
+</html>

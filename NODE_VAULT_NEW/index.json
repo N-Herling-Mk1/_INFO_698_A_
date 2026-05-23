@@ -1,0 +1,71 @@
+{
+  "days": {
+    "2026-04-03": {
+      "loose": {
+        "notes": [],
+        "images": [],
+        "files": []
+      },
+      "classes": [
+        {
+          "id": "CRUCIBLE",
+          "name": "CRUCIBLE Round 2",
+          "tag": "INFO 539 // project",
+          "images": [],
+          "pdfs": [
+            "mk6_kaggle.pdf"
+          ],
+          "hasNotes": true
+        }
+      ]
+    },
+    "2026-05-15": {
+      "loose": {
+        "notes": [],
+        "images": [],
+        "files": []
+      },
+      "classes": [
+        {
+          "id": "INFO_521",
+          "name": "INFO 521 — Exam Prep",
+          "tag": "review",
+          "images": [],
+          "pdfs": [
+            "board_001.pdf"
+          ],
+          "hasNotes": true
+        }
+      ]
+    },
+    "2026-05-22": {
+      "loose": {
+        "notes": [
+          "quick_thoughts.txt",
+          "todo.txt"
+        ],
+        "images": [
+          "board_close_up.png",
+          "whiteboard_snap.png"
+        ],
+        "files": [
+          "INFO_698_5_22_1.pdf",
+          "INFO_698_5_22_2.pdf"
+        ]
+      },
+      "classes": [
+        {
+          "id": "INFO_698",
+          "name": "INFO 698 — Capstone",
+          "tag": "capstone // meeting 1",
+          "images": [],
+          "pdfs": [
+            "meeting_p1.pdf",
+            "meeting_p2.pdf"
+          ],
+          "hasNotes": true
+        }
+      ]
+    }
+  }
+}

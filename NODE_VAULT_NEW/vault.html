@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODES // VAULT</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --c:#00e5ff;--cd:rgba(0,229,255,0.22);--cg:rgba(0,229,255,0.08);
+  --o:#ff6d00;--og:rgba(255,109,0,0.15);
+  --bg:#000810;--bg2:#000d1a;--bg3:#001222;
+  --txt:#c8f0f8;--dim:#5ab8cc;--dim2:#1e5060;
+  --ok:#00ffb3;--fail:#ff3366;
+  --warn:#ffaa44;--done:#6cffae;
+  --grid:rgba(0,229,255,0.06);
+}
+body.ares{
+  --c:#ff2200;--cd:rgba(255,34,0,0.28);--cg:rgba(255,34,0,0.09);
+  --o:#ff7700;--og:rgba(255,119,0,0.18);
+  --bg:#080000;--bg2:#100000;--bg3:#160200;
+  --txt:#ffb89a;--dim:#d06040;--dim2:#5a1a08;
+  --ok:#ff6600;--fail:#ff0044;
+  --warn:#ffaa44;--done:#ff9966;
+  --grid:rgba(255,34,0,0.06);
+}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;
+  height:100vh;width:100vw;overflow:hidden;display:flex;flex-direction:column;}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.12) 3px,rgba(0,0,0,0.12) 4px);
+  pointer-events:none;z-index:9999;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* corner decorators */
+.cdec{position:fixed;width:56px;height:56px;pointer-events:none;z-index:30;}
+.cdec.tl{top:0;left:0;border-top:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.tr{top:0;right:0;border-top:2px solid var(--c);border-right:2px solid var(--c);}
+.cdec.bl{bottom:0;left:0;border-bottom:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.br{bottom:0;right:0;border-bottom:2px solid var(--c);border-right:2px solid var(--c);}
+
+/* header */
+.mhdr{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:88px;border-bottom:1px solid var(--dim);
+  background:rgba(0,8,16,.97);flex-shrink:0;}
+body.ares .mhdr{background:rgba(8,0,0,.97);}
+.mhdr-left{display:flex;flex-direction:column;justify-content:center;gap:4px;}
+.mhdr-logo{font-family:'Orbitron',monospace;font-size:1.7rem;font-weight:900;letter-spacing:.4em;
+  color:var(--c);text-shadow:0 0 22px var(--c),0 0 50px var(--cd);}
+.mhdr-sub{font-size:.66rem;letter-spacing:.4em;color:var(--dim);}
+.mhdr-sub b{color:var(--c);font-weight:400;text-shadow:0 0 8px var(--cd);}
+.mhdr-center{display:flex;align-items:center;gap:18px;}
+.year-tag{font-family:'Orbitron',monospace;font-size:.78rem;letter-spacing:.4em;
+  color:var(--c);padding:7px 18px;border:1px solid var(--dim2);
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));
+  background:var(--cg);}
+.stat-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 10px var(--ok),0 0 20px var(--ok);
+  display:inline-block;margin-right:6px;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.stat-txt{font-size:.66rem;letter-spacing:.22em;color:var(--txt);}
+
+/* ── BACKEND PILL (clickable status indicator + kill button) ── */
+.backend-pill{display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border:1px solid var(--dim2);background:var(--bg3);
+  cursor:pointer;user-select:none;transition:all .15s;
+  font-family:'Orbitron',monospace;font-size:.66rem;letter-spacing:.22em;font-weight:700;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.backend-pill .bp-dot{width:8px;height:8px;border-radius:50%;
+  background:var(--dim2);box-shadow:none;transition:all .2s;}
+.backend-pill .bp-label{color:var(--dim);transition:color .2s;}
+
+/* ONLINE — pulsing green dot, hover prompts the kill */
+.backend-pill.online .bp-dot{background:var(--ok);
+  box-shadow:0 0 8px var(--ok),0 0 16px var(--ok);animation:blink 2s infinite;}
+.backend-pill.online .bp-label{color:var(--ok);text-shadow:0 0 6px var(--ok);}
+.backend-pill.online:hover{border-color:var(--fail);background:rgba(255,51,102,.08);}
+.backend-pill.online:hover .bp-dot{background:var(--fail);
+  box-shadow:0 0 8px var(--fail),0 0 16px var(--fail);animation:none;}
+.backend-pill.online:hover .bp-label{color:var(--fail);text-shadow:0 0 6px var(--fail);}
+.backend-pill.online:hover .bp-label::after{content:' — KILL';}
+
+/* OFFLINE — red dot, no pulse */
+.backend-pill.offline{border-color:rgba(255,51,102,.35);}
+.backend-pill.offline .bp-dot{background:var(--fail);
+  box-shadow:0 0 8px var(--fail);}
+.backend-pill.offline .bp-label{color:var(--fail);}
+.backend-pill.offline:hover{background:rgba(255,51,102,.08);}
+
+/* BUSY — orange dot, fast pulse during shutdown */
+.backend-pill.busy{border-color:var(--o);cursor:wait;}
+.backend-pill.busy .bp-dot{background:var(--o);
+  box-shadow:0 0 10px var(--o),0 0 20px var(--o);
+  animation:blink-fast .4s infinite;}
+.backend-pill.busy .bp-label{color:var(--o);text-shadow:0 0 6px var(--o);}
+@keyframes blink-fast{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* STATIC — dim cyan dot, no pulse. Hover gives a hint instead of "kill". */
+.backend-pill.static{border-color:var(--dim2);}
+.backend-pill.static .bp-dot{background:var(--dim);box-shadow:0 0 4px var(--dim);}
+.backend-pill.static .bp-label{color:var(--dim);}
+.backend-pill.static:hover{background:rgba(255,255,255,.04);}
+
+/* disabled edit buttons in static mode — gated by body.static-mode */
+body.static-mode .hdr-btn.primary,
+body.static-mode .add-cls,
+body.static-mode .empty-cta,
+body.static-mode .edit-cls,
+body.static-mode .dump{
+  opacity:.4; cursor:not-allowed; filter:saturate(.4);
+}
+body.static-mode .hdr-btn.primary:hover,
+body.static-mode .add-cls:hover,
+body.static-mode .empty-cta:hover,
+body.static-mode .edit-cls:hover,
+body.static-mode .dump:hover{
+  border-color:var(--dim2); color:var(--dim);
+  background:transparent; box-shadow:none;
+}
+body.static-mode .hdr-btn.primary::after,
+body.static-mode .add-cls::after,
+body.static-mode .dump::after{
+  content:" (live only)";
+  font-size:.55rem; letter-spacing:.18em; color:var(--dim);
+}
+.mhdr-right{display:flex;align-items:center;gap:10px;}
+.theme-toggle{display:flex;border:1px solid var(--dim2);overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+.tt-btn{padding:7px 22px;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;
+  letter-spacing:.25em;cursor:pointer;border:none;background:transparent;color:var(--dim);transition:all .15s;}
+.tt-btn.on{background:var(--cd);color:var(--c);text-shadow:0 0 10px var(--c);}
+.tt-btn:hover:not(.on){color:var(--txt);background:rgba(255,255,255,.04);}
+.hdr-btn{font-size:.7rem;letter-spacing:.22em;color:var(--dim);cursor:pointer;
+  padding:7px 16px;border:1px solid var(--dim2);transition:all .18s;
+  font-family:'Share Tech Mono',monospace;background:transparent;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.hdr-btn:hover{border-color:var(--c);color:var(--c);background:var(--cg);
+  box-shadow:0 0 14px var(--cd);}
+.hdr-btn.primary{color:var(--c);border-color:var(--cd);background:var(--cg);}
+.hdr-btn.primary:hover{box-shadow:0 0 18px var(--cd);}
+
+/* main layout */
+.mbody{position:relative;z-index:10;display:flex;flex:1;overflow:hidden;}
+
+/* sidebar of mini calendars */
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--dim);
+  background:rgba(0,8,16,.85);overflow-y:auto;padding:14px 12px 80px;}
+body.ares .sidebar{background:rgba(8,0,0,.85);}
+.sidebar::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-track{background:transparent;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--dim2);}
+
+.month{margin-bottom:16px;border:1px solid var(--dim2);
+  background:var(--bg2);padding:8px 8px 6px;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.month-head{font-family:'Orbitron',monospace;color:var(--c);letter-spacing:.3em;
+  font-size:.7rem;text-align:center;margin-bottom:7px;padding-bottom:5px;
+  border-bottom:1px solid var(--dim2);text-shadow:0 0 6px var(--cd);font-weight:700;}
+.dow-row,.week-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.dow{text-align:center;color:var(--dim);font-size:.55rem;letter-spacing:.1em;padding:2px 0;
+  font-family:'Orbitron',monospace;}
+.day{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+  font-size:.7rem;color:var(--txt);cursor:pointer;border:1px solid transparent;
+  position:relative;transition:all .08s;font-family:'Share Tech Mono',monospace;}
+.day.blank{visibility:hidden;cursor:default;}
+.day:not(.blank):hover{background:var(--cg);border-color:var(--dim2);}
+.day.has-content{color:var(--c);text-shadow:0 0 4px var(--cd);}
+.day.has-content::after{content:'';position:absolute;bottom:1px;left:50%;
+  transform:translateX(-50%);width:5px;height:1px;background:var(--c);
+  box-shadow:0 0 4px var(--c);}
+.day.today{border-color:var(--c);box-shadow:inset 0 0 6px var(--cg);}
+.day.selected{background:var(--c);color:#000;text-shadow:none;font-weight:700;}
+.day.selected::after{background:#000;}
+
+/* main panel */
+.main{flex:1;overflow-y:auto;padding:24px 32px 60px;}
+.main::-webkit-scrollbar{width:6px;}
+.main::-webkit-scrollbar-track{background:transparent;}
+.main::-webkit-scrollbar-thumb{background:var(--dim2);}
+
+.panel-head{border-bottom:1px solid var(--dim);padding-bottom:12px;margin-bottom:22px;
+  display:flex;align-items:baseline;gap:18px;justify-content:space-between;}
+.panel-head-left{display:flex;align-items:baseline;gap:16px;}
+.panel-head h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.6rem;
+  letter-spacing:.35em;color:var(--c);text-shadow:0 0 12px var(--cd);}
+.panel-head .iso{color:var(--dim);letter-spacing:.25em;font-size:.78rem;}
+.panel-head .add-cls{font-size:.7rem;}
+
+.class-list{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;}
+.class-card{border:1px solid var(--dim2);background:var(--bg2);
+  padding:10px 16px;cursor:pointer;min-width:180px;
+  transition:all .12s ease-out;position:relative;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));}
+.class-card:hover{border-color:var(--c);background:var(--cg);box-shadow:0 0 12px var(--cd);}
+.class-card.active{background:var(--c);color:#000;border-color:var(--c);box-shadow:0 0 22px var(--cd);}
+.class-card.active .class-meta{color:rgba(0,0,0,0.6);}
+.class-name{font-family:'Orbitron',monospace;letter-spacing:.18em;font-size:.78rem;font-weight:700;}
+.class-meta{color:var(--dim);font-size:.62rem;letter-spacing:.12em;margin-top:3px;}
+
+.asset-zone{border-top:1px dashed var(--dim2);padding-top:18px;}
+.asset-zone h2{font-family:'Orbitron',monospace;letter-spacing:.3em;font-size:.85rem;
+  color:var(--c);margin-bottom:14px;text-shadow:0 0 6px var(--cd);font-weight:700;
+  display:flex;align-items:center;gap:14px;}
+.asset-zone h2 .edit-cls{font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  letter-spacing:.2em;}
+
+.image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;margin-bottom:22px;}
+.image-tile{border:1px solid var(--dim2);background:var(--bg2);padding:6px;
+  cursor:zoom-in;transition:border-color .12s;}
+.image-tile:hover{border-color:var(--c);}
+.image-tile img{width:100%;display:block;background:var(--bg3);}
+.image-tile .cap{color:var(--dim);font-size:.65rem;letter-spacing:.1em;
+  margin-top:5px;text-align:center;font-family:'Share Tech Mono',monospace;}
+
+.pdf-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.pdf-row{display:flex;align-items:center;gap:10px;padding:8px 14px;
+  border:1px solid var(--dim2);background:var(--bg2);transition:all .12s;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.pdf-row:hover{border-color:var(--c);background:var(--cg);}
+.pdf-icon{color:var(--c);font-family:'Orbitron',monospace;font-weight:700;
+  font-size:.7rem;letter-spacing:.15em;padding:2px 6px;border:1px solid var(--cd);}
+.pdf-name{flex:1;font-size:.85rem;color:var(--txt);letter-spacing:.05em;}
+.pdf-row a{color:var(--c);text-decoration:none;font-size:.7rem;letter-spacing:.2em;
+  border:1px solid var(--cd);padding:4px 10px;
+  clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));}
+.pdf-row a:hover{background:var(--cg);box-shadow:0 0 10px var(--cd);}
+
+.notes-block{border:1px solid var(--dim2);background:var(--bg2);
+  padding:14px 18px;white-space:pre-wrap;line-height:1.55;font-size:.85rem;
+  color:var(--txt);margin-bottom:14px;font-family:'Share Tech Mono',monospace;}
+.notes-block .file-tag{display:inline-block;color:var(--dim);font-size:.6rem;
+  letter-spacing:.2em;border:1px solid var(--dim2);padding:2px 7px;margin-bottom:8px;
+  font-family:'Orbitron',monospace;}
+.notes-block .note-h2{color:var(--c);font-family:'Orbitron',monospace;
+  letter-spacing:.22em;font-size:.75rem;margin:10px 0 4px;
+  text-shadow:0 0 4px var(--cd);font-weight:700;}
+.notes-block .todo{color:var(--warn);}
+.notes-block .done{color:var(--done);text-decoration:line-through;opacity:.7;}
+
+.empty{color:var(--dim);text-align:center;padding:60px 20px;
+  letter-spacing:.25em;font-size:.75rem;font-family:'Orbitron',monospace;}
+.empty::before{content:'[ ]';display:block;color:var(--dim2);font-size:2rem;margin-bottom:10px;}
+.empty .empty-cta{display:inline-block;margin-top:16px;padding:8px 22px;
+  border:1px solid var(--cd);color:var(--c);cursor:pointer;
+  font-family:'Orbitron',monospace;font-size:.72rem;letter-spacing:.3em;
+  background:var(--cg);transition:all .15s;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.empty .empty-cta:hover{background:var(--cd);box-shadow:0 0 18px var(--cd);}
+
+/* lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.94);display:none;
+  align-items:center;justify-content:center;z-index:2000;cursor:zoom-out;}
+.lightbox.on{display:flex;}
+.lightbox img{max-width:92vw;max-height:92vh;border:1px solid var(--c);
+  box-shadow:0 0 40px var(--cd);}
+
+/* toast for server errors */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);border:1px solid var(--fail);color:var(--fail);
+  padding:10px 18px;font-size:.75rem;letter-spacing:.2em;z-index:3000;
+  display:none;font-family:'Orbitron',monospace;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.toast.on{display:block;}
+
+/* ════════════════════════════════════════════════
+   DAY FILES ZONE (loose notes/images/files)
+   ════════════════════════════════════════════════ */
+.day-files{margin-bottom:26px;padding-bottom:18px;
+  border-bottom:1px solid var(--dim2);}
+.day-files-title{font-family:'Orbitron',monospace;letter-spacing:.32em;font-size:.78rem;
+  color:var(--c);text-shadow:0 0 6px var(--cd);font-weight:700;
+  display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.day-files-title .dump{font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  letter-spacing:.2em;}
+.df-bucket{margin-bottom:14px;}
+.df-bucket-head{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.3em;
+  color:var(--dim);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.df-bucket-head::before{content:'';width:18px;height:1px;background:var(--dim2);}
+.df-bucket-head::after{content:'';flex:1;height:1px;background:var(--dim2);}
+.df-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.df-image{border:1px solid var(--dim2);background:var(--bg2);padding:4px;cursor:pointer;
+  transition:border-color .12s;}
+.df-image:hover{border-color:var(--c);}
+.df-image img{width:100%;display:block;background:var(--bg3);}
+.df-image .cap{color:var(--dim);font-size:.6rem;letter-spacing:.08em;margin-top:3px;
+  text-align:center;font-family:'Share Tech Mono',monospace;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.df-files{display:flex;flex-direction:column;gap:5px;}
+.df-file{display:flex;align-items:center;gap:10px;padding:7px 12px;
+  border:1px solid var(--dim2);background:var(--bg2);cursor:pointer;
+  transition:all .12s;font-size:.78rem;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));}
+.df-file:hover{border-color:var(--c);background:var(--cg);}
+.df-file .ftag{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.18em;
+  color:var(--c);border:1px solid var(--cd);padding:1px 5px;min-width:36px;text-align:center;}
+.df-file .fname{flex:1;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ════════════════════════════════════════════════
+   SEARCH BAR
+   ════════════════════════════════════════════════ */
+.search-wrap{position:relative;}
+.search-input{background:var(--bg3);border:1px solid var(--dim2);color:var(--txt);
+  font-family:'Share Tech Mono',monospace;font-size:.78rem;letter-spacing:.06em;
+  padding:7px 12px 7px 26px;width:240px;outline:none;transition:all .12s;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.search-input:focus{border-color:var(--c);box-shadow:0 0 8px var(--cd);width:300px;}
+.search-input::placeholder{color:var(--dim);letter-spacing:.18em;font-size:.7rem;}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);
+  color:var(--dim);font-size:.9rem;pointer-events:none;}
+.search-results{position:absolute;top:calc(100% + 6px);right:0;width:420px;
+  max-height:480px;overflow-y:auto;background:var(--bg2);border:1px solid var(--c);
+  box-shadow:0 4px 18px rgba(0,0,0,.6),0 0 20px var(--cd);z-index:500;display:none;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.search-results.on{display:block;}
+.search-results::-webkit-scrollbar{width:6px;}
+.search-results::-webkit-scrollbar-thumb{background:var(--dim2);}
+.sr-header{padding:8px 14px;font-family:'Orbitron',monospace;font-size:.6rem;
+  letter-spacing:.25em;color:var(--c);border-bottom:1px solid var(--dim2);background:var(--bg3);}
+.sr-group{padding:6px 14px 4px;font-family:'Orbitron',monospace;font-size:.55rem;
+  letter-spacing:.3em;color:var(--dim);background:rgba(0,0,0,.3);
+  border-top:1px solid var(--dim2);}
+.sr-item{padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--dim2);
+  transition:background .1s;}
+.sr-item:hover{background:var(--cg);}
+.sr-item-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.sr-kind{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.2em;
+  color:var(--c);border:1px solid var(--cd);padding:1px 5px;}
+.sr-date{font-family:'Share Tech Mono',monospace;font-size:.65rem;color:var(--dim);}
+.sr-snippet{font-size:.75rem;color:var(--txt);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;letter-spacing:.02em;}
+.sr-empty{padding:18px;color:var(--dim);font-family:'Orbitron',monospace;
+  font-size:.7rem;letter-spacing:.2em;text-align:center;}
+
+/* ════════════════════════════════════════════════
+   VIEWER PANEL (bottom slide-up)
+   ════════════════════════════════════════════════ */
+.viewer{position:fixed;left:0;right:0;bottom:0;height:60vh;
+  background:var(--bg);border-top:2px solid var(--c);
+  box-shadow:0 -10px 30px rgba(0,0,0,.7),0 -2px 20px var(--cd);
+  transform:translateY(100%);transition:transform .25s ease-out;
+  z-index:1500;display:flex;flex-direction:column;}
+.viewer.on{transform:translateY(0);}
+.viewer.full{height:100vh;}
+.viewer-controls{display:flex;align-items:center;gap:10px;padding:10px 18px;
+  border-bottom:1px solid var(--dim);background:var(--bg2);flex-shrink:0;}
+.vc-nav{display:flex;gap:6px;}
+.vc-btn{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.18em;
+  color:var(--dim);cursor:pointer;padding:6px 12px;border:1px solid var(--dim2);
+  background:transparent;font-weight:700;transition:all .12s;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));}
+.vc-btn:hover:not(:disabled){border-color:var(--c);color:var(--c);background:var(--cg);}
+.vc-btn:disabled{opacity:.3;cursor:not-allowed;}
+.vc-title{flex:1;font-family:'Share Tech Mono',monospace;font-size:.85rem;
+  color:var(--txt);letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;padding:0 8px;}
+.vc-counter{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.2em;
+  color:var(--c);text-shadow:0 0 4px var(--cd);}
+.viewer-stage{flex:1;overflow:auto;background:#000;display:flex;
+  align-items:center;justify-content:center;position:relative;}
+.viewer-stage embed,.viewer-stage iframe{width:100%;height:100%;border:none;background:#fff;}
+.viewer-stage img{max-width:100%;max-height:100%;display:block;}
+.viewer-stage .text-view{width:100%;max-width:900px;height:100%;overflow-y:auto;
+  padding:24px 28px;background:var(--bg2);color:var(--txt);
+  font-family:'Share Tech Mono',monospace;font-size:.88rem;line-height:1.6;
+  white-space:pre-wrap;align-self:flex-start;}
+.viewer-stage .text-view .note-h2{color:var(--c);font-family:'Orbitron',monospace;
+  letter-spacing:.22em;font-size:.8rem;margin:10px 0 4px;
+  text-shadow:0 0 4px var(--cd);font-weight:700;}
+.viewer-stage .text-view .todo{color:var(--warn);}
+.viewer-stage .text-view .done{color:var(--done);text-decoration:line-through;opacity:.7;}
+.viewer-stage .text-view .file-tag{display:inline-block;color:var(--dim);font-size:.6rem;
+  letter-spacing:.2em;border:1px solid var(--dim2);padding:2px 7px;margin-bottom:14px;
+  font-family:'Orbitron',monospace;}
+.viewer-stage .unknown{color:var(--dim);font-family:'Orbitron',monospace;
+  font-size:.85rem;letter-spacing:.25em;text-align:center;padding:60px;}
+.viewer-stage .unknown a{color:var(--c);}
+</style>
+</head>
+<body>
+
+<div class="cdec tl"></div><div class="cdec tr"></div>
+<div class="cdec bl"></div><div class="cdec br"></div>
+
+<header class="mhdr">
+  <div class="mhdr-left">
+    <div class="mhdr-logo">NODE // VAULT</div>
+    <div class="mhdr-sub">CALENDAR &nbsp;//&nbsp; <b id="crumb">— select a day —</b></div>
+  </div>
+  <div class="mhdr-center">
+    <span class="year-tag" id="year-tag">2026</span>
+    <span class="backend-pill" id="backend-pill" onclick="onBackendClick()" title="click to shut down the server">
+      <span class="bp-dot" id="bp-dot"></span>
+      <span class="bp-label" id="bp-label">BACKEND: CHECKING</span>
+    </span>
+  </div>
+  <div class="mhdr-right">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" class="search-input" id="search-input"
+             placeholder="SEARCH ALL DAYS" autocomplete="off"
+             oninput="onSearchInput(this.value)"
+             onfocus="onSearchFocus()" onblur="onSearchBlur()" />
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <button class="hdr-btn primary" onclick="openEditor()">+ EDITOR</button>
+    <div class="theme-toggle">
+      <button class="tt-btn on" id="tt-classic" onclick="setTheme('classic')">CLASSIC</button>
+      <button class="tt-btn"    id="tt-ares"    onclick="setTheme('ares')">ARES</button>
+    </div>
+    <button class="hdr-btn" onclick="logout()">LOGOUT</button>
+  </div>
+</header>
+
+<div class="mbody">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main" id="main">
+    <div class="empty">SELECT A DAY FROM THE SIDEBAR</div>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('on')">
+  <img id="lightbox-img" alt="" />
+</div>
+
+<!-- ════════════ VIEWER PANEL (bottom slide-up) ════════════ -->
+<div class="viewer" id="viewer">
+  <div class="viewer-controls">
+    <div class="vc-nav">
+      <button class="vc-btn" id="vc-prev" onclick="viewerStep(-1)" title="previous">&lt;</button>
+      <button class="vc-btn" id="vc-next" onclick="viewerStep(1)"  title="next">&gt;</button>
+    </div>
+    <div class="vc-title" id="vc-title">—</div>
+    <div class="vc-counter" id="vc-counter">0 / 0</div>
+    <button class="vc-btn" id="vc-newtab" onclick="viewerOpenNewTab()" title="open in a new tab">↗ NEW TAB</button>
+    <button class="vc-btn" onclick="viewerToggleFull()" title="toggle fullscreen">⛶</button>
+    <button class="vc-btn" onclick="viewerClose()" title="close">✕</button>
+  </div>
+  <div class="viewer-stage" id="viewer-stage"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   URL helpers — site works both under Flask (/) and as a static
+   file deploy (vault.html). isStatic() checks the URL form.
+   ───────────────────────────────────────────────────────────── */
+function isStatic()    { return /\.html?$/i.test(location.pathname); }
+function splashURL()   { return isStatic() ? 'index.html'      : '/'; }
+function vaultURL()    { return isStatic() ? 'vault.html'      : '/vault'; }
+function editURL()     { return isStatic() ? 'edit_vault.html' : '/edit'; }
+
+/* ─────────────────────────────────────────────────────────────
+   AUTH GATE — splash/spiral has set sessionStorage.nodes_auth=1
+   ───────────────────────────────────────────────────────────── */
+if (sessionStorage.getItem('nodes_auth') !== '1') {
+  window.location.href = splashURL();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   THEME
+   ───────────────────────────────────────────────────────────── */
+let currentTheme = sessionStorage.getItem('nodes_theme') || 'classic';
+if (currentTheme === 'ares') document.body.classList.add('ares');
+document.getElementById('tt-classic').classList.toggle('on', currentTheme === 'classic');
+document.getElementById('tt-ares').classList.toggle('on', currentTheme === 'ares');
+function setTheme(t) {
+  currentTheme = t;
+  document.body.classList.toggle('ares', t === 'ares');
+  document.getElementById('tt-classic').classList.toggle('on', t === 'classic');
+  document.getElementById('tt-ares').classList.toggle('on', t === 'ares');
+  sessionStorage.setItem('nodes_theme', t);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STATE
+   ───────────────────────────────────────────────────────────── */
+const YEAR = new Date().getFullYear();   // current calendar year
+const DOW  = ["S","M","T","W","T","F","S"];
+const FULLDAY = ["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"];
+const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE",
+                     "JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+const MONTH_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+let manifest = { days: {} };
+let selectedDay = null;
+let selectedClassId = null;
+
+/* ─────────────────────────────────────────────────────────────
+   DATE HELPERS (native Date — verified accurate Gregorian)
+   ───────────────────────────────────────────────────────────── */
+function daysInMonth(y, m0) { return new Date(y, m0 + 1, 0).getDate(); }
+function firstDow(y, m0)    { return new Date(y, m0, 1).getDay(); }
+function pad2(n)            { return String(n).padStart(2, "0"); }
+function dayKey(y, m0, d)   { return `${y}-${pad2(m0+1)}-${pad2(d)}`; }
+function isSameDay(a, b)    {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+function hasContent(k) {
+  const d = manifest.days[k];
+  if (!d) return false;
+  if (Array.isArray(d.classes) && d.classes.length > 0) return true;
+  if (d.loose) {
+    if ((d.loose.notes || []).length > 0)  return true;
+    if ((d.loose.images || []).length > 0) return true;
+    if ((d.loose.files || []).length > 0)  return true;
+  }
+  return false;
+}
+function dayObj(k) {
+  // safe accessor that always returns a {loose:{notes,images,files}, classes:[]} shape
+  const d = manifest.days[k];
+  if (!d) return { loose: {notes:[],images:[],files:[]}, classes: [] };
+  return {
+    loose: {
+      notes:  d.loose?.notes  || [],
+      images: d.loose?.images || [],
+      files:  d.loose?.files  || [],
+    },
+    classes: d.classes || [],
+  };
+}
+function escapeHTML(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SERVER I/O
+   ───────────────────────────────────────────────────────────── */
+async function loadManifest() {
+  // Try Flask first, fall back to static index.json on GitHub Pages.
+  // The 'live' detection drives whether edit buttons work, etc.
+  try {
+    const r = await fetch('/api/manifest', { cache: 'no-store',
+                                              signal: AbortSignal.timeout(1500) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    manifest = await r.json();
+    window.NODE_VAULT_LIVE = true;
+    setBackendState('online');
+    return;
+  } catch (e) {
+    // Flask not running. Fall back to static manifest.
+    window.NODE_VAULT_LIVE = false;
+    try {
+      const r = await fetch('index.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      manifest = await r.json();
+      setBackendState('static');
+    } catch (e2) {
+      setBackendState('static');
+      toast('no manifest found (index.json missing)');
+      manifest = { days: {} };
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BACKEND STATUS PILL — live polling + click-to-kill
+   ───────────────────────────────────────────────────────────── */
+let backendState = 'checking';   // 'online' | 'offline' | 'busy' | 'checking'
+let backendPoller = null;
+
+function setBackendState(state) {
+  backendState = state;
+  const pill = document.getElementById('backend-pill');
+  const lbl  = document.getElementById('bp-label');
+  pill.classList.remove('online', 'offline', 'busy', 'static');
+  if (state === 'online')  { pill.classList.add('online');  lbl.textContent = 'BACKEND: ONLINE'; }
+  if (state === 'offline') { pill.classList.add('offline'); lbl.textContent = 'BACKEND: OFFLINE'; }
+  if (state === 'busy')    { pill.classList.add('busy');    lbl.textContent = 'BACKEND: STOPPING'; }
+  if (state === 'static')  { pill.classList.add('static');  lbl.textContent = 'STATIC MODE'; }
+  if (state === 'checking'){ lbl.textContent = 'BACKEND: CHECKING'; }
+  // Toggle body class so CSS can dim editor buttons in static mode.
+  document.body.classList.toggle('static-mode', !window.NODE_VAULT_LIVE);
+}
+
+function refreshEditButtonState() {
+  // No-op kept for back-compat; styling is now driven by body.static-mode class.
+}
+
+async function pollBackend() {
+  // In static mode (no Flask), don't poll. The pill stays "STATIC MODE".
+  if (backendState === 'static') return;
+  try {
+    const r = await fetch('/api/manifest', { cache: 'no-store', signal: AbortSignal.timeout(2000) });
+    if (r.ok) {
+      if (backendState !== 'online' && backendState !== 'busy') {
+        // server came back online after being offline — refresh data
+        await loadManifest();
+        renderSidebar();
+        if (selectedDay) renderMain();
+      }
+      if (backendState !== 'busy') setBackendState('online');
+    } else {
+      setBackendState('offline');
+    }
+  } catch {
+    if (backendState !== 'busy') setBackendState('offline');
+  }
+}
+
+function startBackendPoller() {
+  if (backendPoller) return;
+  backendPoller = setInterval(pollBackend, 4000);
+}
+
+async function onBackendClick() {
+  if (backendState === 'static') {
+    toast('static mode — run start_vault.bat to enable editing');
+    return;
+  }
+  if (backendState === 'online') {
+    if (!confirm('Shut down the vault server?\n\nThe console window will close. To restart, double-click start_vault.bat.')) {
+      return;
+    }
+    setBackendState('busy');
+    try {
+      await fetch('/api/shutdown', { method: 'POST' });
+    } catch {
+      /* expected — connection drops as server exits */
+    }
+    // settle to offline after the process actually dies
+    setTimeout(async () => {
+      try {
+        await fetch('/api/manifest', { cache: 'no-store', signal: AbortSignal.timeout(1000) });
+        // still alive? unexpected
+        setBackendState('online');
+        toast('shutdown did not take — try again', true);
+      } catch {
+        setBackendState('offline');
+        toast('server stopped');
+      }
+    }, 1200);
+  } else if (backendState === 'offline') {
+    toast('start the server by running start_vault.bat');
+  }
+}
+window.onBackendClick = onBackendClick;
+function toast(msg, fail) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  // success styling uses the cyan/red themed border (kept as default in vault.html via .toast css)
+  // fail keeps the existing red look (.toast was already red-bordered).
+  t.classList.add('on');
+  if (fail) {
+    t.style.borderColor = 'var(--fail)';
+    t.style.color = 'var(--fail)';
+  } else {
+    t.style.borderColor = 'var(--ok)';
+    t.style.color = 'var(--ok)';
+  }
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('on'), 3500);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SIDEBAR — 12 monthly calendars
+   ───────────────────────────────────────────────────────────── */
+function renderSidebar() {
+  const sb = document.getElementById("sidebar");
+  sb.innerHTML = "";
+  const today = new Date();
+
+  for (let m = 0; m < 12; m++) {
+    const offset = firstDow(YEAR, m);
+    const total  = daysInMonth(YEAR, m);
+
+    const wrap = document.createElement("div");
+    wrap.className = "month";
+
+    const head = document.createElement("div");
+    head.className = "month-head";
+    head.textContent = MONTH_NAMES[m];
+    wrap.appendChild(head);
+
+    const dowRow = document.createElement("div");
+    dowRow.className = "dow-row";
+    DOW.forEach(d => {
+      const c = document.createElement("div");
+      c.className = "dow";
+      c.textContent = d;
+      dowRow.appendChild(c);
+    });
+    wrap.appendChild(dowRow);
+
+    const grid = document.createElement("div");
+    grid.className = "week-row";
+    grid.style.marginTop = "3px";
+    for (let i = 0; i < offset; i++) {
+      const b = document.createElement("div");
+      b.className = "day blank";
+      grid.appendChild(b);
+    }
+    for (let d = 1; d <= total; d++) {
+      const cell = document.createElement("div");
+      cell.className = "day";
+      cell.textContent = d;
+      const key = dayKey(YEAR, m, d);
+      cell.dataset.key = key;
+      if (hasContent(key)) cell.classList.add("has-content");
+      if (isSameDay(new Date(YEAR, m, d), today)) cell.classList.add("today");
+      if (selectedDay === key) cell.classList.add("selected");
+      cell.addEventListener("click", () => selectDay(key));
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+    sb.appendChild(wrap);
+  }
+  document.getElementById("year-tag").textContent = String(YEAR);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN PANEL
+   ───────────────────────────────────────────────────────────── */
+function selectDay(key) {
+  selectedDay = key;
+  selectedClassId = null;
+  document.querySelectorAll(".day.selected").forEach(n => n.classList.remove("selected"));
+  const cell = document.querySelector(`.day[data-key="${key}"]`);
+  if (cell) cell.classList.add("selected");
+
+  const [y, mo, d] = key.split("-").map(Number);
+  const dt = new Date(y, mo - 1, d);
+  document.getElementById("crumb").textContent =
+    `${FULLDAY[dt.getDay()]}, ${MONTH_SHORT[dt.getMonth()]} ${d}, ${y}`;
+
+  renderMain();
+}
+
+function renderMain() {
+  const main = document.getElementById("main");
+  if (!selectedDay) {
+    main.innerHTML = `<div class="empty">SELECT A DAY FROM THE SIDEBAR</div>`;
+    return;
+  }
+  const [y, mo, d] = selectedDay.split("-").map(Number);
+  const dt = new Date(y, mo - 1, d);
+  const day = dayObj(selectedDay);
+  const classes = day.classes;
+  const loose = day.loose;
+
+  let html = `
+    <div class="panel-head">
+      <div class="panel-head-left">
+        <h1>${FULLDAY[dt.getDay()]}</h1>
+        <span class="iso">${selectedDay}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="hdr-btn add-cls" onclick="openEditor('${selectedDay}','','day')">+ DAY FILES</button>
+        <button class="hdr-btn add-cls" onclick="openEditor('${selectedDay}')">+ ADD CLASS</button>
+      </div>
+    </div>
+  `;
+
+  const empty = classes.length === 0 &&
+                loose.notes.length === 0 && loose.images.length === 0 && loose.files.length === 0;
+  if (empty) {
+    html += `
+      <div class="empty">
+        NO ENTRIES FOR THIS DAY
+        <br>
+        <span class="empty-cta" onclick="openEditor('${selectedDay}','','day')">+ DUMP FILES</span>
+        &nbsp;&nbsp;
+        <span class="empty-cta" onclick="openEditor('${selectedDay}')">+ ADD CLASS</span>
+      </div>`;
+    main.innerHTML = html;
+    return;
+  }
+
+  // ─── DAY FILES section ───
+  const hasLoose = loose.notes.length || loose.images.length || loose.files.length;
+  if (hasLoose) {
+    html += `<section class="day-files">
+      <div class="day-files-title">[ DAY FILES ]
+        <button class="hdr-btn dump" onclick="openEditor('${selectedDay}','','day')">+ DUMP</button>
+      </div>`;
+
+    if (loose.notes.length) {
+      html += `<div class="df-bucket"><div class="df-bucket-head">notes/</div>
+        <div class="df-files">`;
+      for (const fn of loose.notes) {
+        html += `<div class="df-file" onclick="openViewerByLoose('notes', '${encodeURIComponent(fn)}')">
+          <span class="ftag">TXT</span>
+          <span class="fname">${escapeHTML(fn)}</span>
+        </div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    if (loose.images.length) {
+      html += `<div class="df-bucket"><div class="df-bucket-head">images/</div>
+        <div class="df-images">`;
+      for (const fn of loose.images) {
+        const url = `/assets/${selectedDay.replace(/-/g,'/')}/images/${encodeURIComponent(fn)}`;
+        html += `<div class="df-image" onclick="openViewerByLoose('images', '${encodeURIComponent(fn)}')">
+          <img src="${url}" alt="${escapeHTML(fn)}" loading="lazy" />
+          <div class="cap" title="${escapeHTML(fn)}">${escapeHTML(fn)}</div>
+        </div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    if (loose.files.length) {
+      html += `<div class="df-bucket"><div class="df-bucket-head">loose/</div>
+        <div class="df-files">`;
+      for (const fn of loose.files) {
+        const ext = (fn.split('.').pop() || '').toUpperCase().slice(0,4);
+        html += `<div class="df-file" onclick="openViewerByLoose('loose', '${encodeURIComponent(fn)}')">
+          <span class="ftag">${escapeHTML(ext || 'FILE')}</span>
+          <span class="fname">${escapeHTML(fn)}</span>
+        </div>`;
+      }
+      html += `</div></div>`;
+    }
+    html += `</section>`;
+  }
+
+  // ─── CLASSES section ───
+  if (classes.length) {
+    html += `<div class="class-list">`;
+    for (const c of classes) {
+      const active = c.id === selectedClassId ? "active" : "";
+      const meta = c.tag || "";
+      html += `
+        <div class="class-card ${active}" data-class="${c.id}">
+          <div class="class-name">${escapeHTML(c.name)}</div>
+          ${meta ? `<div class="class-meta">${escapeHTML(meta)}</div>` : ""}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+  html += `<div id="asset-zone" class="asset-zone"></div>`;
+
+  main.innerHTML = html;
+  main.querySelectorAll(".class-card").forEach(el => {
+    el.addEventListener("click", () => {
+      selectedClassId = el.dataset.class;
+      renderMain();
+    });
+  });
+  if (selectedClassId) renderAssets();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ASSETS — images, pdfs, ascii notes
+   ───────────────────────────────────────────────────────────── */
+async function renderAssets() {
+  const zone = document.getElementById("asset-zone");
+  if (!zone) return;
+  const day = dayObj(selectedDay);
+  const cls = day.classes.find(c => c.id === selectedClassId);
+  if (!cls) return;
+
+  const folder = `/assets/${selectedDay.replace(/-/g, "/")}/${cls.id}`;
+
+  const imgs = (cls.images || []).map(name =>
+    `<div class="image-tile" onclick="openViewerByClass('${cls.id}','image','${encodeURIComponent(name)}')">
+       <img src="${folder}/${encodeURIComponent(name)}" alt="${escapeHTML(name)}" loading="lazy" />
+       <div class="cap">${escapeHTML(name)}</div>
+     </div>`
+  ).join("");
+
+  const pdfs = (cls.pdfs || []).map(name =>
+    `<div class="pdf-row" onclick="openViewerByClass('${cls.id}','pdf','${encodeURIComponent(name)}')">
+       <span class="pdf-icon">PDF</span>
+       <span class="pdf-name">${escapeHTML(name)}</span>
+       <a href="${folder}/${encodeURIComponent(name)}" target="_blank" rel="noopener"
+          onclick="event.stopPropagation()">OPEN</a>
+     </div>`
+  ).join("");
+
+  zone.innerHTML = `
+    <h2>
+      // ${escapeHTML(cls.name)}
+      <button class="hdr-btn edit-cls" onclick="openEditor('${selectedDay}','${cls.id}')">EDIT</button>
+    </h2>
+    ${imgs  ? `<div class="image-grid">${imgs}</div>` : ""}
+    ${pdfs  ? `<div class="pdf-list">${pdfs}</div>`   : ""}
+    <div id="notes-area">${cls.hasNotes ? "// loading notes..." : ""}</div>
+  `;
+
+  if (cls.hasNotes) {
+    try {
+      let text = '';
+      if (window.NODE_VAULT_LIVE) {
+        const r = await fetch(`/api/note/${selectedDay}/${cls.id}`);
+        const j = await r.json();
+        text = j.text || '';
+      } else {
+        // static mode: fetch the raw notes.txt from assets/
+        const r = await fetch(`${folder}/notes.txt`, { cache: 'no-store' });
+        text = r.ok ? await r.text() : '';
+      }
+      noteCacheSet(`class:${selectedDay}:${cls.id}`, text);
+      document.getElementById("notes-area").innerHTML = text
+        ? `<div class="notes-block">
+             <span class="file-tag">notes.txt</span>
+             <div>${renderAscii(text)}</div>
+           </div>`
+        : "";
+    } catch (e) {
+      document.getElementById("notes-area").innerHTML =
+        `<div class="notes-block"><span class="file-tag">notes.txt</span>
+         <div style="color:var(--fail)">// failed to load notes</div></div>`;
+    }
+  }
+}
+
+/* ASCII formatter — ## header, [ ] todo, [x] done, plain pass-through */
+function renderAscii(text) {
+  return text.split(/\r?\n/).map(line => {
+    if (/^##\s+/.test(line))           return `<div class="note-h2">${escapeHTML(line.replace(/^##\s+/, ""))}</div>`;
+    if (/^\s*\[\s\]\s+/.test(line))    return `<span class="todo">${escapeHTML(line)}</span>`;
+    if (/^\s*\[[xX]\]\s+/.test(line))  return `<span class="done">${escapeHTML(line)}</span>`;
+    return escapeHTML(line) || "&nbsp;";
+  }).join("\n");
+}
+
+/* ═════════════════════════════════════════════════════════════
+   VIEWER PANEL — bottom slide-up, three modes (pdf/image/text)
+   ═════════════════════════════════════════════════════════════ */
+/*
+  Playlist model: any time we open the viewer, we build a flat array of items
+  representing EVERYTHING viewable on the current day (mixed buckets).
+  Each item: { url, name, type: 'pdf'|'image'|'text', textKind?: 'class_note'|'day_note', ... }
+*/
+let viewerPlaylist = [];
+let viewerIndex    = 0;
+
+function extOf(name) { return (name.split('.').pop() || '').toLowerCase(); }
+function typeFor(name) {
+  const e = extOf(name);
+  if (e === 'pdf') return 'pdf';
+  if (e === 'png' || e === 'jpg' || e === 'jpeg' || e === 'gif' || e === 'webp') return 'image';
+  if (e === 'txt' || e === 'md' || e === 'log') return 'text';
+  return 'other';
+}
+
+function buildDayPlaylist() {
+  const day = dayObj(selectedDay);
+  const list = [];
+  const datePath = selectedDay.replace(/-/g, '/');
+
+  // 1) Day-level: notes/, images/, loose/
+  for (const fn of day.loose.notes) {
+    list.push({
+      kind: 'day_note', bucket: 'notes',
+      name: fn,
+      url:  `/assets/${datePath}/notes/${encodeURIComponent(fn)}`,
+      type: 'text',
+    });
+  }
+  for (const fn of day.loose.images) {
+    list.push({
+      kind: 'day_image', bucket: 'images',
+      name: fn,
+      url:  `/assets/${datePath}/images/${encodeURIComponent(fn)}`,
+      type: 'image',
+    });
+  }
+  for (const fn of day.loose.files) {
+    list.push({
+      kind: 'day_file', bucket: 'loose',
+      name: fn,
+      url:  `/assets/${datePath}/loose/${encodeURIComponent(fn)}`,
+      type: typeFor(fn),
+    });
+  }
+
+  // 2) Class-level: images, pdfs, and notes.txt as a synthetic text item
+  for (const c of day.classes) {
+    for (const fn of (c.images || [])) {
+      list.push({
+        kind: 'class_image', classId: c.id, className: c.name,
+        name: fn,
+        url:  `/assets/${datePath}/${c.id}/${encodeURIComponent(fn)}`,
+        type: 'image',
+      });
+    }
+    for (const fn of (c.pdfs || [])) {
+      list.push({
+        kind: 'class_pdf', classId: c.id, className: c.name,
+        name: fn,
+        url:  `/assets/${datePath}/${c.id}/${encodeURIComponent(fn)}`,
+        type: 'pdf',
+      });
+    }
+    if (c.hasNotes) {
+      // URL differs between modes: live uses /api/note (JSON), static reads raw .txt
+      const noteUrl = window.NODE_VAULT_LIVE
+        ? `/api/note/${selectedDay}/${c.id}`
+        : `/assets/${datePath}/${c.id}/notes.txt`;
+      list.push({
+        kind: 'class_note', classId: c.id, className: c.name,
+        name: `${c.id}/notes.txt`,
+        url:  noteUrl,
+        type: 'text',
+      });
+    }
+  }
+  return list;
+}
+
+function openViewerByLoose(bucket, encodedName) {
+  viewerPlaylist = buildDayPlaylist();
+  const target = decodeURIComponent(encodedName);
+  const idx = viewerPlaylist.findIndex(it =>
+    it.bucket === bucket && it.name === target
+  );
+  if (idx >= 0) { viewerIndex = idx; renderViewer(); openViewer(); }
+}
+function openViewerByClass(classId, kind, encodedName) {
+  viewerPlaylist = buildDayPlaylist();
+  const target = decodeURIComponent(encodedName);
+  const wantKind = kind === 'image' ? 'class_image' : 'class_pdf';
+  const idx = viewerPlaylist.findIndex(it =>
+    it.kind === wantKind && it.classId === classId && it.name === target
+  );
+  if (idx >= 0) { viewerIndex = idx; renderViewer(); openViewer(); }
+}
+window.openViewerByLoose = openViewerByLoose;
+window.openViewerByClass = openViewerByClass;
+
+function openViewer()  { document.getElementById('viewer').classList.add('on'); }
+function viewerClose() { document.getElementById('viewer').classList.remove('on', 'full'); }
+function viewerToggleFull() { document.getElementById('viewer').classList.toggle('full'); }
+window.viewerClose = viewerClose;
+window.viewerToggleFull = viewerToggleFull;
+
+function viewerStep(delta) {
+  if (viewerPlaylist.length === 0) return;
+  viewerIndex = (viewerIndex + delta + viewerPlaylist.length) % viewerPlaylist.length;
+  renderViewer();
+}
+window.viewerStep = viewerStep;
+
+function viewerOpenNewTab() {
+  const it = viewerPlaylist[viewerIndex];
+  if (!it) return;
+  // class_note in LIVE mode is a JSON API endpoint — open the raw file instead.
+  // In static mode it's already a raw /assets/.../notes.txt URL, use it as-is.
+  if (it.kind === 'class_note' && window.NODE_VAULT_LIVE) {
+    const datePath = selectedDay.replace(/-/g, '/');
+    window.open(`/assets/${datePath}/${it.classId}/notes.txt`, '_blank');
+    return;
+  }
+  window.open(it.url, '_blank');
+}
+window.viewerOpenNewTab = viewerOpenNewTab;
+
+async function renderViewer() {
+  const it = viewerPlaylist[viewerIndex];
+  const stage = document.getElementById('viewer-stage');
+  const title = document.getElementById('vc-title');
+  const counter = document.getElementById('vc-counter');
+  const prev = document.getElementById('vc-prev');
+  const next = document.getElementById('vc-next');
+  if (!it) {
+    stage.innerHTML = '';
+    title.textContent = '—';
+    counter.textContent = '0 / 0';
+    return;
+  }
+  const labelPrefix = it.classId ? `[${it.classId}] ` : `[${it.bucket}/] `;
+  title.textContent = labelPrefix + it.name;
+  counter.textContent = `${viewerIndex + 1} / ${viewerPlaylist.length}`;
+  prev.disabled = viewerPlaylist.length < 2;
+  next.disabled = viewerPlaylist.length < 2;
+
+  if (it.type === 'pdf') {
+    stage.innerHTML = `<embed src="${it.url}#toolbar=1" type="application/pdf" />`;
+  } else if (it.type === 'image') {
+    stage.innerHTML = `<img src="${it.url}" alt="${escapeHTML(it.name)}" />`;
+  } else if (it.type === 'text') {
+    stage.innerHTML = `<div class="text-view"><span class="file-tag">${escapeHTML(it.name)}</span><div>// loading…</div></div>`;
+    try {
+      let text = '';
+      // Distinguish by URL shape, not by kind, so static mode (which uses
+      // /assets/.../notes.txt for class_note) reads the raw file correctly.
+      const isApi = it.url.startsWith('/api/');
+      const r = await fetch(it.url);
+      if (isApi) {
+        const j = await r.json();
+        text = j.text || '';
+      } else {
+        text = r.ok ? await r.text() : '';
+      }
+      // populate the note cache so client-side search can find content later
+      if (it.kind === 'class_note') {
+        noteCacheSet(`class:${selectedDay}:${it.classId}`, text);
+      } else if (it.kind === 'day_note') {
+        noteCacheSet(`day:${selectedDay}:${it.name}`, text);
+      }
+      stage.innerHTML = `<div class="text-view">
+        <span class="file-tag">${escapeHTML(it.name)}</span>
+        <div>${renderAscii(text)}</div>
+      </div>`;
+    } catch (e) {
+      stage.innerHTML = `<div class="unknown">// failed to load text<br><br>${escapeHTML(e.message)}</div>`;
+    }
+  } else {
+    stage.innerHTML = `<div class="unknown">
+      no inline viewer for this file type<br><br>
+      <a href="${it.url}" target="_blank">${escapeHTML(it.name)} ↗</a>
+    </div>`;
+  }
+}
+
+/* ESC closes the viewer */
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape')      viewerClose();
+  if (e.key === 'ArrowLeft' && document.getElementById('viewer').classList.contains('on')) viewerStep(-1);
+  if (e.key === 'ArrowRight' && document.getElementById('viewer').classList.contains('on')) viewerStep(1);
+});
+
+/* ═════════════════════════════════════════════════════════════
+   GLOBAL SEARCH
+   ═════════════════════════════════════════════════════════════ */
+let searchTimer = null;
+let searchFocused = false;
+
+function onSearchFocus() {
+  searchFocused = true;
+  const v = document.getElementById('search-input').value.trim();
+  if (v.length >= 2) document.getElementById('search-results').classList.add('on');
+}
+function onSearchBlur() {
+  searchFocused = false;
+  // small delay so clicks on result items register before we hide
+  setTimeout(() => {
+    if (!searchFocused) document.getElementById('search-results').classList.remove('on');
+  }, 200);
+}
+window.onSearchFocus = onSearchFocus;
+window.onSearchBlur  = onSearchBlur;
+
+function onSearchInput(value) {
+  clearTimeout(searchTimer);
+  const q = (value || '').trim();
+  if (q.length < 2) {
+    document.getElementById('search-results').classList.remove('on');
+    return;
+  }
+  searchTimer = setTimeout(() => doSearch(q), 250);
+}
+window.onSearchInput = onSearchInput;
+
+async function doSearch(q) {
+  const box = document.getElementById('search-results');
+  try {
+    let payload;
+    if (window.NODE_VAULT_LIVE) {
+      const r = await fetch('/api/search?q=' + encodeURIComponent(q));
+      payload = await r.json();
+    } else {
+      payload = await clientSideSearch(q);
+    }
+    renderSearchResults(payload);
+    box.classList.add('on');
+  } catch (e) {
+    box.innerHTML = `<div class="sr-empty">SEARCH FAILED: ${escapeHTML(e.message)}</div>`;
+    box.classList.add('on');
+  }
+}
+
+/* Static-mode search — scans the loaded manifest plus any class/day notes that
+   have already been viewed (we don't fetch every notes.txt eagerly to keep this
+   fast). Hits cover: filenames, class id/name/tag. Notes content only matches
+   if it's been opened in the viewer at least once this session. */
+const _noteCache = new Map();  // key: 'class:date:id' or 'day:date:filename'  →  text
+
+function noteCacheSet(key, text) { _noteCache.set(key, text); }
+
+async function clientSideSearch(q) {
+  const qLC = q.toLowerCase();
+  const results = [];
+  const days = manifest.days || {};
+  for (const [date, day] of Object.entries(days)) {
+    // classes
+    for (const c of (day.classes || [])) {
+      const hay = `${c.id} ${c.name || ''} ${c.tag || ''}`.toLowerCase();
+      if (hay.includes(qLC)) {
+        results.push({ kind: 'class', date, id: c.id, name: c.name, tag: c.tag,
+                       snippet: `${c.name}${c.tag ? ' — ' + c.tag : ''}` });
+      }
+      for (const fn of (c.images || []).concat(c.pdfs || [])) {
+        if (fn.toLowerCase().includes(qLC)) {
+          results.push({ kind: 'class_file', date, id: c.id, filename: fn, snippet: fn });
+        }
+      }
+      // cached class notes (only if loaded earlier this session)
+      const ckey = `class:${date}:${c.id}`;
+      if (_noteCache.has(ckey)) {
+        scanCachedNote(_noteCache.get(ckey), qLC, results,
+                       { kind: 'class_note', date, id: c.id });
+      }
+    }
+    // day-level files
+    const L = day.loose || {};
+    for (const fn of (L.notes || [])) {
+      if (fn.toLowerCase().includes(qLC)) {
+        results.push({ kind: 'day_file', date, bucket: 'notes', filename: fn, snippet: fn });
+      }
+      const dkey = `day:${date}:${fn}`;
+      if (_noteCache.has(dkey)) {
+        scanCachedNote(_noteCache.get(dkey), qLC, results,
+                       { kind: 'day_note', date, filename: fn });
+      }
+    }
+    for (const fn of (L.images || [])) {
+      if (fn.toLowerCase().includes(qLC)) {
+        results.push({ kind: 'day_file', date, bucket: 'images', filename: fn, snippet: fn });
+      }
+    }
+    for (const fn of (L.files || [])) {
+      if (fn.toLowerCase().includes(qLC)) {
+        results.push({ kind: 'day_file', date, bucket: 'loose', filename: fn, snippet: fn });
+      }
+    }
+  }
+  const kindOrder = { class: 0, class_file: 1, day_file: 2, class_note: 3, day_note: 4 };
+  results.sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return (kindOrder[a.kind] || 9) - (kindOrder[b.kind] || 9);
+  });
+  return { query: q, count: results.length, results: results.slice(0, 200) };
+}
+
+function scanCachedNote(text, qLC, results, base) {
+  if (!text) return;
+  const lines = text.split(/\r?\n/);
+  let hits = 0;
+  for (let i = 0; i < lines.length && hits < 3; i++) {
+    if (lines[i].toLowerCase().includes(qLC)) {
+      let snippet = lines[i].trim();
+      if (snippet.length > 140) snippet = snippet.slice(0, 140) + '…';
+      results.push({ ...base, line: i + 1, snippet });
+      hits++;
+    }
+  }
+}
+
+const KIND_LABEL = {
+  class:      'CLASS',
+  class_file: 'FILE',
+  class_note: 'NOTE',
+  day_file:   'DAY FILE',
+  day_note:   'DAY NOTE',
+};
+
+function renderSearchResults(j) {
+  const box = document.getElementById('search-results');
+  if (!j.results || j.results.length === 0) {
+    box.innerHTML = `<div class="sr-empty">NO MATCHES FOR "${escapeHTML(j.query)}"</div>`;
+    return;
+  }
+  // group by date
+  const byDate = {};
+  for (const r of j.results) {
+    (byDate[r.date] = byDate[r.date] || []).push(r);
+  }
+  const dates = Object.keys(byDate).sort().reverse();
+
+  let html = `<div class="sr-header">${j.count} RESULTS // "${escapeHTML(j.query)}"</div>`;
+  for (const dt of dates) {
+    html += `<div class="sr-group">// ${dt}</div>`;
+    for (const r of byDate[dt]) {
+      const kind = KIND_LABEL[r.kind] || r.kind;
+      const lineSuffix = r.line ? ` :${r.line}` : '';
+      html += `<div class="sr-item" onclick="searchResultClick('${dt}','${r.kind}','${r.id || ''}','${(r.bucket||'')}','${encodeURIComponent(r.filename||'')}')">
+        <div class="sr-item-top">
+          <span class="sr-kind">${escapeHTML(kind)}</span>
+          <span class="sr-date">${escapeHTML(r.name || r.filename || r.id || '')}${lineSuffix}</span>
+        </div>
+        <div class="sr-snippet">${escapeHTML(r.snippet)}</div>
+      </div>`;
+    }
+  }
+  box.innerHTML = html;
+}
+
+function searchResultClick(date, kind, classId, bucket, encodedFilename) {
+  document.getElementById('search-results').classList.remove('on');
+  document.getElementById('search-input').blur();
+  // jump to the day
+  if (selectedDay !== date) selectDay(date);
+  // then open the right thing
+  setTimeout(() => {
+    if (kind === 'class' || kind === 'class_note') {
+      selectedClassId = classId;
+      renderMain();
+    } else if (kind === 'class_file' && classId) {
+      selectedClassId = classId;
+      renderMain();
+      // open the file in the viewer after a tick (so renderAssets has run)
+      setTimeout(() => {
+        const ext = extOf(decodeURIComponent(encodedFilename));
+        const t = (ext === 'pdf') ? 'pdf' : 'image';
+        openViewerByClass(classId, t, encodedFilename);
+      }, 100);
+    } else if (kind === 'day_file' || kind === 'day_note') {
+      openViewerByLoose(bucket || 'notes', encodedFilename);
+    }
+  }, 50);
+}
+window.searchResultClick = searchResultClick;
+
+/* ─────────────────────────────────────────────────────────────
+   LIGHTBOX
+   ───────────────────────────────────────────────────────────── */
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('on');
+}
+window.openLightbox = openLightbox;
+
+/* ─────────────────────────────────────────────────────────────
+   EDITOR POPUP
+   ───────────────────────────────────────────────────────────── */
+let editorWin = null;
+function openEditor(date, classId, mode) {
+  if (!window.NODE_VAULT_LIVE) {
+    toast('static mode — start vault_server.py to enable editing');
+    return;
+  }
+  const params = new URLSearchParams();
+  if (date)    params.set('date', date);
+  if (classId) params.set('class', classId);
+  if (mode)    params.set('mode', mode);  // 'day' for the new day-files dropzone
+  const url = editURL() + (params.toString() ? '?' + params.toString() : '');
+  // try to reuse existing editor window
+  if (editorWin && !editorWin.closed) {
+    editorWin.location.href = url;
+    editorWin.focus();
+    return;
+  }
+  editorWin = window.open(url, 'nodes_editor',
+    'width=960,height=720,menubar=no,toolbar=no,location=no');
+  if (!editorWin) toast('popup blocked — allow popups for localhost');
+}
+window.openEditor = openEditor;
+
+/* refresh manifest when editor signals a change */
+const refreshChan = ('BroadcastChannel' in window)
+  ? new BroadcastChannel('nodes_vault')
+  : null;
+if (refreshChan) {
+  refreshChan.onmessage = async (ev) => {
+    if (ev.data && ev.data.type === 'refresh') {
+      await loadManifest();
+      renderSidebar();
+      // if currently selected day was changed, re-render main
+      if (selectedDay) renderMain();
+    }
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LOGOUT
+   ───────────────────────────────────────────────────────────── */
+function logout() {
+  sessionStorage.removeItem('nodes_auth');
+  window.location.href = splashURL();
+}
+window.logout = logout;
+
+/* ─────────────────────────────────────────────────────────────
+   BOOT
+   ───────────────────────────────────────────────────────────── */
+(async function init() {
+  setBackendState('checking');
+  await loadManifest();
+  renderSidebar();
+  startBackendPoller();
+  // auto-select today if it has content; else most recent populated day
+  const today = new Date();
+  const todayKey = dayKey(today.getFullYear(), today.getMonth(), today.getDate());
+  if (manifest.days[todayKey]) {
+    selectDay(todayKey);
+  } else {
+    const keys = Object.keys(manifest.days).sort().reverse();
+    if (keys.length) selectDay(keys[0]);
+  }
+})();
+</script>
+</body>
+</html>

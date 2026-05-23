@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODES // EDITOR</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --c:#00e5ff;--cd:rgba(0,229,255,0.22);--cg:rgba(0,229,255,0.08);
+  --o:#ff6d00;--og:rgba(255,109,0,0.15);
+  --bg:#000810;--bg2:#000d1a;--bg3:#001222;
+  --txt:#c8f0f8;--dim:#5ab8cc;--dim2:#1e5060;
+  --ok:#00ffb3;--fail:#ff3366;
+  --grid:rgba(0,229,255,0.06);
+}
+body.ares{
+  --c:#ff2200;--cd:rgba(255,34,0,0.28);--cg:rgba(255,34,0,0.09);
+  --o:#ff7700;--og:rgba(255,119,0,0.18);
+  --bg:#080000;--bg2:#100000;--bg3:#160200;
+  --txt:#ffb89a;--dim:#d06040;--dim2:#5a1a08;
+  --ok:#ff6600;--fail:#ff0044;
+  --grid:rgba(255,34,0,0.06);
+}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;
+  min-height:100vh;}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.12) 3px,rgba(0,0,0,0.12) 4px);
+  pointer-events:none;z-index:9999;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0;}
+
+.cdec{position:fixed;width:42px;height:42px;pointer-events:none;z-index:30;}
+.cdec.tl{top:0;left:0;border-top:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.tr{top:0;right:0;border-top:2px solid var(--c);border-right:2px solid var(--c);}
+.cdec.bl{bottom:0;left:0;border-bottom:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.br{bottom:0;right:0;border-bottom:2px solid var(--c);border-right:2px solid var(--c);}
+
+.ehdr{position:relative;z-index:10;padding:18px 28px;border-bottom:1px solid var(--dim);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(0,8,16,.97);}
+body.ares .ehdr{background:rgba(8,0,0,.97);}
+.ehdr-logo{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;
+  letter-spacing:.4em;color:var(--c);text-shadow:0 0 18px var(--cd);}
+.ehdr-sub{font-size:.7rem;letter-spacing:.3em;color:var(--dim);margin-top:3px;}
+.ehdr-right{display:flex;gap:8px;}
+
+.ebody{position:relative;z-index:10;padding:20px 28px 60px;max-width:900px;margin:0 auto;}
+
+/* ── mode switcher ── */
+.mode-bar{display:flex;border:1px solid var(--dim2);margin-bottom:20px;background:var(--bg2);
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+.mode-btn{flex:1;padding:14px 0;font-family:'Orbitron',monospace;font-size:.82rem;
+  font-weight:700;letter-spacing:.3em;cursor:pointer;border:none;
+  background:transparent;color:var(--dim);transition:all .15s;}
+.mode-btn:hover:not(.on){color:var(--txt);background:rgba(255,255,255,.04);}
+.mode-btn.on{background:var(--cd);color:var(--c);text-shadow:0 0 12px var(--c);}
+
+.section{margin-bottom:22px;border:1px solid var(--dim2);background:var(--bg2);
+  padding:16px 20px;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+.section-title{font-family:'Orbitron',monospace;font-size:.78rem;letter-spacing:.3em;
+  color:var(--c);text-shadow:0 0 6px var(--cd);margin-bottom:12px;font-weight:700;
+  display:flex;align-items:center;gap:14px;}
+.section-title .badge{font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  letter-spacing:.2em;color:var(--dim);border:1px solid var(--dim2);padding:2px 8px;}
+
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.row:last-child{margin-bottom:0;}
+.row label{font-size:.72rem;letter-spacing:.18em;color:var(--dim);
+  min-width:90px;font-family:'Orbitron',monospace;}
+.row input,.row select{flex:1;min-width:200px;background:var(--bg3);
+  border:1px solid var(--dim2);color:var(--txt);
+  padding:8px 12px;font-family:'Share Tech Mono',monospace;font-size:.85rem;
+  letter-spacing:.05em;outline:none;transition:all .12s;}
+.row input:focus,.row select:focus{border-color:var(--c);box-shadow:0 0 8px var(--cd);}
+.row input[type=date]{font-family:'Share Tech Mono',monospace;color-scheme:dark;}
+
+.btn{font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;
+  letter-spacing:.22em;color:var(--dim);cursor:pointer;
+  padding:8px 18px;border:1px solid var(--dim2);background:transparent;
+  transition:all .15s;
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.btn:hover{border-color:var(--c);color:var(--c);background:var(--cg);box-shadow:0 0 14px var(--cd);}
+.btn.primary{color:var(--c);border-color:var(--cd);background:var(--cg);}
+.btn.primary:hover{box-shadow:0 0 18px var(--cd);}
+.btn.danger{color:var(--fail);border-color:rgba(255,51,102,.4);}
+.btn.danger:hover{background:rgba(255,51,102,.1);box-shadow:0 0 14px rgba(255,51,102,.3);}
+.btn.small{padding:5px 10px;font-size:.62rem;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+textarea{width:100%;min-height:240px;background:var(--bg3);border:1px solid var(--dim2);
+  color:var(--txt);padding:12px 14px;font-family:'Share Tech Mono',monospace;
+  font-size:.85rem;line-height:1.55;resize:vertical;outline:none;
+  transition:border-color .12s;}
+textarea:focus{border-color:var(--c);box-shadow:0 0 8px var(--cd);}
+.notes-help{font-size:.65rem;letter-spacing:.15em;color:var(--dim);margin-top:6px;}
+.notes-help code{color:var(--c);background:var(--cg);padding:1px 5px;
+  border:1px solid var(--dim2);}
+
+.dropzone{border:2px dashed var(--dim2);padding:24px;text-align:center;
+  cursor:pointer;transition:all .15s;background:var(--bg3);
+  font-family:'Orbitron',monospace;letter-spacing:.25em;font-size:.78rem;
+  color:var(--dim);}
+.dropzone:hover,.dropzone.dragover{border-color:var(--c);background:var(--cg);
+  color:var(--c);box-shadow:inset 0 0 18px var(--cd);}
+.dropzone-hint{font-size:.62rem;letter-spacing:.15em;color:var(--dim);
+  margin-top:6px;font-family:'Share Tech Mono',monospace;}
+
+.rename-row{display:flex;align-items:center;gap:10px;margin-top:12px;}
+.rename-row label{font-size:.65rem;letter-spacing:.2em;color:var(--dim);
+  font-family:'Orbitron',monospace;white-space:nowrap;}
+.rename-row input{flex:1;background:var(--bg3);border:1px solid var(--dim2);color:var(--txt);
+  padding:6px 10px;font-family:'Share Tech Mono',monospace;font-size:.78rem;outline:none;}
+.rename-row input:focus{border-color:var(--c);box-shadow:0 0 6px var(--cd);}
+.rename-row .hint{font-size:.6rem;color:var(--dim);letter-spacing:.1em;}
+
+.asset-row{display:flex;align-items:center;gap:10px;padding:7px 12px;
+  border:1px solid var(--dim2);background:var(--bg3);margin-bottom:5px;font-size:.8rem;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));}
+.asset-row .kind{font-family:'Orbitron',monospace;font-size:.55rem;letter-spacing:.18em;
+  color:var(--c);border:1px solid var(--cd);padding:2px 5px;min-width:50px;text-align:center;}
+.asset-row .name{flex:1;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.asset-row .del{cursor:pointer;color:var(--fail);font-size:.62rem;
+  letter-spacing:.15em;font-family:'Orbitron',monospace;
+  border:1px solid rgba(255,51,102,.3);padding:3px 8px;background:transparent;}
+.asset-row .del:hover{background:rgba(255,51,102,.15);}
+.asset-row .edit{cursor:pointer;color:var(--c);font-size:.62rem;
+  letter-spacing:.15em;font-family:'Orbitron',monospace;
+  border:1px solid var(--cd);padding:3px 8px;background:transparent;}
+.asset-row .edit:hover{background:var(--cg);}
+
+.bucket-block{margin-bottom:14px;}
+.bucket-head{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.3em;
+  color:var(--dim);margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.bucket-head::after{content:'';flex:1;height:1px;background:var(--dim2);}
+
+.class-chooser{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.class-pill{padding:6px 14px;border:1px solid var(--dim2);cursor:pointer;
+  font-size:.72rem;letter-spacing:.15em;font-family:'Orbitron',monospace;
+  color:var(--dim);background:var(--bg3);transition:all .12s;
+  clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));}
+.class-pill:hover{border-color:var(--c);color:var(--c);}
+.class-pill.on{background:var(--c);color:#000;border-color:var(--c);}
+.class-pill.new{color:var(--c);border-color:var(--cd);font-weight:700;}
+.class-pill.new:hover{background:var(--cg);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:10px 18px;font-size:.72rem;letter-spacing:.2em;z-index:3000;
+  display:none;font-family:'Orbitron',monospace;
+  border:1px solid var(--ok);color:var(--ok);background:var(--bg2);
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px));}
+.toast.on{display:block;}
+.toast.fail{border-color:var(--fail);color:var(--fail);}
+
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="cdec tl"></div><div class="cdec tr"></div>
+<div class="cdec bl"></div><div class="cdec br"></div>
+
+<header class="ehdr">
+  <div>
+    <div class="ehdr-logo">// EDITOR</div>
+    <div class="ehdr-sub">NODE_VAULT &nbsp;//&nbsp; ADD &middot; EDIT &middot; UPLOAD</div>
+  </div>
+  <div class="ehdr-right">
+    <button class="btn" onclick="window.close()">CLOSE</button>
+  </div>
+</header>
+
+<div class="ebody">
+
+  <!-- ─── MODE SWITCHER ─── -->
+  <div class="mode-bar">
+    <button class="mode-btn on" id="mode-class" onclick="setMode('class')">CLASS-LEVEL</button>
+    <button class="mode-btn"    id="mode-day"   onclick="setMode('day')">DAY FILES</button>
+  </div>
+
+  <!-- ─── DATE PICKER (always visible) ─── -->
+  <section class="section">
+    <div class="section-title">[ DAY ]</div>
+    <div class="row">
+      <label>DATE</label>
+      <input type="date" id="f-date" />
+      <button class="btn primary" onclick="loadDay()">LOAD</button>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════ CLASS MODE ═══════════════════════ -->
+  <div id="m-class">
+    <section class="section">
+      <div class="section-title">[ CLASS ]</div>
+      <div class="row">
+        <label>CLASSES</label>
+        <div id="cls-pills" class="class-chooser" style="flex:1;"></div>
+      </div>
+      <div id="new-cls" class="hidden">
+        <div class="row" style="margin-top:10px;">
+          <label>NEW ID</label>
+          <input type="text" id="f-new-id" placeholder="e.g. INFO_698 (letters, digits, _ -)  [reserved: notes/images/loose]" />
+        </div>
+        <div class="row">
+          <label>NAME</label>
+          <input type="text" id="f-new-name" placeholder="e.g. INFO 698" />
+        </div>
+        <div class="row">
+          <label>TAG</label>
+          <input type="text" id="f-new-tag" placeholder="e.g. capstone (optional)" />
+        </div>
+        <div class="row">
+          <button class="btn primary" onclick="createClass()">CREATE CLASS</button>
+          <button class="btn" onclick="cancelNewClass()">CANCEL</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section hidden" id="sec-cls-uploads">
+      <div class="section-title">[ ASSETS ] <span class="badge" id="cls-badge"></span></div>
+      <div class="dropzone" id="cls-dz">
+        DROP PNG / JPG / PDF HERE  /  CLICK TO PICK
+        <div class="dropzone-hint">strict: PNG &middot; JPG &middot; PDF for class folders</div>
+        <input type="file" id="cls-files" multiple accept=".png,.jpg,.jpeg,.pdf" style="display:none;" />
+      </div>
+      <div class="rename-row">
+        <label>RENAME TO</label>
+        <input type="text" id="cls-rename" placeholder="optional — leave blank to keep original filename" />
+        <span class="hint">extension preserved</span>
+      </div>
+      <div id="cls-asset-list" style="margin-top:14px;"></div>
+      <div class="row" style="margin-top:14px;justify-content:flex-end;">
+        <button class="btn danger" onclick="deleteClass()">DELETE CLASS</button>
+      </div>
+    </section>
+
+    <section class="section hidden" id="sec-cls-notes">
+      <div class="section-title">[ NOTES // notes.txt ]</div>
+      <textarea id="cls-notes" placeholder="## SECTION
+[ ] todo
+[x] done
+plain text..."></textarea>
+      <div class="notes-help">
+        syntax: <code>## HEADER</code> &middot; <code>[ ] todo</code> &middot; <code>[x] done</code>
+      </div>
+      <div class="row" style="margin-top:12px;justify-content:flex-end;">
+        <button class="btn primary" onclick="saveClassNotes()">SAVE NOTES</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════════════════ DAY MODE ═══════════════════════ -->
+  <div id="m-day" class="hidden">
+    <section class="section">
+      <div class="section-title">[ DAY FILES // UPLOAD ]</div>
+      <div class="dropzone" id="day-dz">
+        DROP FILES HERE  /  CLICK TO PICK
+        <div class="dropzone-hint">
+          AUTO-ROUTED: .txt &rarr; notes/ &middot; .png/.jpg &rarr; images/ &middot; everything else &rarr; loose/
+        </div>
+        <input type="file" id="day-files" multiple style="display:none;" />
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <label>BUCKET</label>
+        <select id="day-bucket">
+          <option value="">AUTO (by extension)</option>
+          <option value="notes">notes/</option>
+          <option value="images">images/  (PNG/JPG only)</option>
+          <option value="loose">loose/</option>
+        </select>
+      </div>
+      <div class="rename-row">
+        <label>RENAME TO</label>
+        <input type="text" id="day-rename" placeholder="optional — extension preserved" />
+        <span class="hint">applies to next upload</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">[ DAY ASSETS ]</div>
+      <div id="day-asset-list"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">[ DAY NOTES // create / edit ]</div>
+      <div class="row">
+        <label>FILE</label>
+        <select id="day-note-file" onchange="loadDayNoteFromSelect()">
+          <option value="">— pick a notes/*.txt —</option>
+        </select>
+        <button class="btn" onclick="newDayNote()">+ NEW NOTE</button>
+      </div>
+      <div id="day-note-editor" class="hidden">
+        <div class="row" style="margin-top:10px;">
+          <label>FILENAME</label>
+          <input type="text" id="f-note-fname" placeholder="e.g. todo.txt" />
+        </div>
+        <textarea id="f-day-note" placeholder="## SECTION
+[ ] todo item
+plain text..."></textarea>
+        <div class="notes-help">
+          loose .txt rendered with same syntax: <code>## HEADER</code> &middot; <code>[ ] todo</code> &middot; <code>[x] done</code>
+        </div>
+        <div class="row" style="margin-top:12px;justify-content:flex-end;gap:8px;">
+          <button class="btn" onclick="cancelDayNote()">CANCEL</button>
+          <button class="btn primary" onclick="saveDayNote()">SAVE NOTE</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* AUTH GATE */
+function isStatic()  { return /\.html?$/i.test(location.pathname); }
+function splashURL() { return isStatic() ? 'index.html' : '/'; }
+if (sessionStorage.getItem('nodes_auth') !== '1') window.location.href = splashURL();
+const theme = sessionStorage.getItem('nodes_theme') || 'classic';
+if (theme === 'ares') document.body.classList.add('ares');
+
+/* ─────────────────────────── STATE ─────────────────────────── */
+let mode = 'class';
+let currentDate = null;
+let currentClassId = null;
+let currentDay = { loose:{notes:[],images:[],files:[]}, classes:[] };
+let currentDayNoteFilename = null;   // when editing an existing day note
+
+const chan = ('BroadcastChannel' in window) ? new BroadcastChannel('nodes_vault') : null;
+function broadcastRefresh() { if (chan) chan.postMessage({ type: 'refresh' }); }
+
+function toast(msg, fail=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (fail ? ' fail' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('on'), 3500);
+}
+function escapeHTML(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+async function apiJSON(method, url, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(url, opts);
+  const txt = await r.text();
+  let data = {};
+  try { data = txt ? JSON.parse(txt) : {}; } catch { data = { error: txt }; }
+  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}: ${txt.slice(0,200)}`);
+  return data;
+}
+
+/* ─────────────────────────── MODE SWITCHER ─────────────────────────── */
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-class').classList.toggle('on', m === 'class');
+  document.getElementById('mode-day').classList.toggle('on', m === 'day');
+  document.getElementById('m-class').classList.toggle('hidden', m !== 'class');
+  document.getElementById('m-day').classList.toggle('hidden', m !== 'day');
+}
+window.setMode = setMode;
+
+/* ─────────────────────────── BOOT FROM QUERY ─────────────────────────── */
+(function initFromQuery() {
+  const p = new URLSearchParams(location.search);
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm   = String(today.getMonth()+1).padStart(2,'0');
+  const dd   = String(today.getDate()).padStart(2,'0');
+  document.getElementById('f-date').value = p.get('date') || `${yyyy}-${mm}-${dd}`;
+  if (p.get('mode') === 'day') setMode('day');
+  loadDay().then(() => {
+    const wantId = p.get('class');
+    if (wantId && mode === 'class') {
+      const e = currentDay.classes.find(c => c.id === wantId);
+      if (e) selectClass(wantId);
+    }
+  });
+})();
+
+/* ─────────────────────────── DAY LOAD ─────────────────────────── */
+async function loadDay() {
+  const date = document.getElementById('f-date').value;
+  if (!date) { toast('pick a date first', true); return; }
+  currentDate = date;
+  currentClassId = null;
+  try {
+    currentDay = await apiJSON('GET', `/api/day/${date}`);
+    // backward compat: legacy server returned an array
+    if (Array.isArray(currentDay)) {
+      currentDay = { loose:{notes:[],images:[],files:[]}, classes: currentDay };
+    }
+  } catch (e) {
+    toast('load failed: ' + e.message, true);
+    currentDay = { loose:{notes:[],images:[],files:[]}, classes: [] };
+  }
+  renderClassPills();
+  hideClassUI();
+  renderDayAssets();
+  renderDayNoteList();
+}
+window.loadDay = loadDay;
+
+/* ═══════════════════════ CLASS MODE ═══════════════════════ */
+function renderClassPills() {
+  const box = document.getElementById('cls-pills');
+  let html = '';
+  for (const c of currentDay.classes) {
+    const on = c.id === currentClassId ? 'on' : '';
+    html += `<div class="class-pill ${on}" onclick="selectClass('${c.id}')">${escapeHTML(c.name)}</div>`;
+  }
+  html += `<div class="class-pill new" onclick="startNewClass()">+ NEW CLASS</div>`;
+  box.innerHTML = html;
+}
+function startNewClass() {
+  document.getElementById('new-cls').classList.remove('hidden');
+  document.getElementById('f-new-id').focus();
+}
+function cancelNewClass() {
+  document.getElementById('new-cls').classList.add('hidden');
+  ['f-new-id','f-new-name','f-new-tag'].forEach(id => document.getElementById(id).value = '');
+}
+window.startNewClass = startNewClass;
+window.cancelNewClass = cancelNewClass;
+
+async function createClass() {
+  const id   = document.getElementById('f-new-id').value.trim();
+  const name = document.getElementById('f-new-name').value.trim() || id;
+  const tag  = document.getElementById('f-new-tag').value.trim();
+  if (!id) { toast('class id required', true); return; }
+  if (!/^[A-Za-z0-9_\-]+$/.test(id)) { toast('id: letters, digits, _ - only', true); return; }
+  if (['notes','images','loose'].includes(id)) {
+    toast(`id '${id}' is reserved for day-level files`, true); return;
+  }
+  try {
+    await apiJSON('POST', '/api/class', { date: currentDate, id, name, tag });
+    toast('class created');
+    cancelNewClass();
+    await loadDay();
+    selectClass(id);
+    broadcastRefresh();
+  } catch (e) {
+    toast('create failed: ' + e.message, true);
+  }
+}
+window.createClass = createClass;
+
+async function selectClass(id) {
+  currentClassId = id;
+  renderClassPills();
+  const entry = currentDay.classes.find(c => c.id === id);
+  if (!entry) return;
+  document.getElementById('cls-badge').textContent = entry.name;
+  document.getElementById('sec-cls-uploads').classList.remove('hidden');
+  document.getElementById('sec-cls-notes').classList.remove('hidden');
+  renderClassAssetList(entry);
+  try {
+    const r = await apiJSON('GET', `/api/note/${currentDate}/${id}`);
+    document.getElementById('cls-notes').value = r.text || '';
+  } catch (e) {
+    document.getElementById('cls-notes').value = '';
+  }
+}
+window.selectClass = selectClass;
+
+function hideClassUI() {
+  document.getElementById('sec-cls-uploads').classList.add('hidden');
+  document.getElementById('sec-cls-notes').classList.add('hidden');
+}
+function renderClassAssetList(entry) {
+  const list = document.getElementById('cls-asset-list');
+  const rows = [];
+  (entry.images || []).forEach(fn => rows.push(['IMG', fn]));
+  (entry.pdfs   || []).forEach(fn => rows.push(['PDF', fn]));
+  if (rows.length === 0) {
+    list.innerHTML = `<div style="color:var(--dim);font-size:.75rem;letter-spacing:.2em;padding:8px 4px;">// NO ASSETS YET</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(([kind, fn]) =>
+    `<div class="asset-row">
+       <span class="kind">${kind}</span>
+       <span class="name">${escapeHTML(fn)}</span>
+       <button class="del" onclick="deleteClassAsset('${escapeHTML(fn).replace(/'/g,"\\'")}')">DELETE</button>
+     </div>`
+  ).join('');
+}
+
+/* class dropzone wiring */
+(function wireClassDropzone() {
+  const dz = document.getElementById('cls-dz');
+  const fi = document.getElementById('cls-files');
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    uploadClassFiles(Array.from(e.dataTransfer.files));
+  });
+  fi.addEventListener('change', () => { uploadClassFiles(Array.from(fi.files)); fi.value=''; });
+})();
+const CLASS_ALLOWED = new Set(['png','jpg','jpeg','pdf']);
+async function uploadClassFiles(files) {
+  if (!currentClassId) { toast('select or create a class first', true); return; }
+  const rename = document.getElementById('cls-rename').value.trim();
+  for (const f of files) {
+    const ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (!CLASS_ALLOWED.has(ext)) { toast(`skipped (.${ext}): class uploads need PNG/JPG/PDF`, true); continue; }
+    try {
+      const fd = new FormData();
+      fd.append('date', currentDate);
+      fd.append('class_id', currentClassId);
+      fd.append('file', f);
+      if (rename) fd.append('rename_to', rename);
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const txt = await r.text();
+      if (!r.ok) throw new Error(txt.slice(0,200));
+      toast('uploaded: ' + f.name);
+    } catch (e) {
+      toast('upload failed: ' + e.message, true);
+    }
+  }
+  document.getElementById('cls-rename').value = '';
+  await loadDay();
+  if (currentClassId) selectClass(currentClassId);
+  broadcastRefresh();
+}
+
+async function deleteClassAsset(filename) {
+  if (!confirm(`Delete file:\n${filename}`)) return;
+  try {
+    await apiJSON('DELETE', `/api/asset/${currentDate}/${currentClassId}/${encodeURIComponent(filename)}`);
+    toast('deleted: ' + filename);
+    await loadDay();
+    selectClass(currentClassId);
+    broadcastRefresh();
+  } catch (e) {
+    toast('delete failed: ' + e.message, true);
+  }
+}
+window.deleteClassAsset = deleteClassAsset;
+
+async function saveClassNotes() {
+  if (!currentClassId) { toast('no class selected', true); return; }
+  const text = document.getElementById('cls-notes').value;
+  try {
+    await apiJSON('PUT', `/api/note/${currentDate}/${currentClassId}`, { text });
+    toast('notes saved');
+    broadcastRefresh();
+  } catch (e) {
+    toast('save failed: ' + e.message, true);
+  }
+}
+window.saveClassNotes = saveClassNotes;
+
+async function deleteClass() {
+  if (!currentClassId) return;
+  const entry = currentDay.classes.find(c => c.id === currentClassId);
+  if (!entry) return;
+  if (!confirm(`Delete ENTIRE class "${entry.name}"?\nAll files and notes will be lost.`)) return;
+  try {
+    await apiJSON('DELETE', `/api/class/${currentDate}/${currentClassId}`);
+    toast('class deleted');
+    currentClassId = null;
+    hideClassUI();
+    await loadDay();
+    broadcastRefresh();
+  } catch (e) {
+    toast('delete failed: ' + e.message, true);
+  }
+}
+window.deleteClass = deleteClass;
+
+/* ═══════════════════════ DAY MODE ═══════════════════════ */
+/* day dropzone wiring */
+(function wireDayDropzone() {
+  const dz = document.getElementById('day-dz');
+  const fi = document.getElementById('day-files');
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    uploadDayFiles(Array.from(e.dataTransfer.files));
+  });
+  fi.addEventListener('change', () => { uploadDayFiles(Array.from(fi.files)); fi.value=''; });
+})();
+
+async function uploadDayFiles(files) {
+  if (!currentDate) { toast('pick a date first', true); return; }
+  const rename = document.getElementById('day-rename').value.trim();
+  const bucket = document.getElementById('day-bucket').value;  // '' = auto
+  for (const f of files) {
+    try {
+      const fd = new FormData();
+      fd.append('date', currentDate);
+      fd.append('file', f);
+      if (rename) fd.append('rename_to', rename);
+      if (bucket) fd.append('bucket', bucket);
+      const r = await fetch('/api/day-upload', { method: 'POST', body: fd });
+      const txt = await r.text();
+      if (!r.ok) throw new Error(txt.slice(0,200));
+      const j = JSON.parse(txt);
+      toast(`uploaded to ${j.bucket}/: ${j.filename}`);
+    } catch (e) {
+      toast('upload failed: ' + e.message, true);
+    }
+  }
+  document.getElementById('day-rename').value = '';
+  await loadDay();
+  broadcastRefresh();
+}
+
+function renderDayAssets() {
+  const list = document.getElementById('day-asset-list');
+  const L = currentDay.loose;
+  if (!L || (!L.notes.length && !L.images.length && !L.files.length)) {
+    list.innerHTML = `<div style="color:var(--dim);font-size:.75rem;letter-spacing:.2em;padding:8px 4px;">// NO DAY-LEVEL FILES YET</div>`;
+    return;
+  }
+  let html = '';
+  if (L.notes.length) {
+    html += `<div class="bucket-block"><div class="bucket-head">notes/</div>`;
+    for (const fn of L.notes) html += renderDayAssetRow('notes', 'TXT', fn);
+    html += `</div>`;
+  }
+  if (L.images.length) {
+    html += `<div class="bucket-block"><div class="bucket-head">images/</div>`;
+    for (const fn of L.images) html += renderDayAssetRow('images', 'IMG', fn);
+    html += `</div>`;
+  }
+  if (L.files.length) {
+    html += `<div class="bucket-block"><div class="bucket-head">loose/</div>`;
+    for (const fn of L.files) {
+      const ext = (fn.split('.').pop() || '').toUpperCase().slice(0,4);
+      html += renderDayAssetRow('loose', ext, fn);
+    }
+    html += `</div>`;
+  }
+  list.innerHTML = html;
+}
+function renderDayAssetRow(bucket, kind, fn) {
+  const editable = (bucket === 'notes' && fn.toLowerCase().endsWith('.txt'));
+  return `<div class="asset-row">
+    <span class="kind">${escapeHTML(kind)}</span>
+    <span class="name">${escapeHTML(fn)}</span>
+    ${editable ? `<button class="edit" onclick="editDayNote('${escapeHTML(fn).replace(/'/g,"\\'")}')">EDIT</button>` : ''}
+    <button class="del" onclick="deleteDayAsset('${bucket}','${escapeHTML(fn).replace(/'/g,"\\'")}')">DELETE</button>
+  </div>`;
+}
+
+async function deleteDayAsset(bucket, filename) {
+  if (!confirm(`Delete from ${bucket}/:\n${filename}`)) return;
+  try {
+    await apiJSON('DELETE', `/api/day-asset/${currentDate}/${bucket}/${encodeURIComponent(filename)}`);
+    toast('deleted: ' + filename);
+    await loadDay();
+    broadcastRefresh();
+  } catch (e) {
+    toast('delete failed: ' + e.message, true);
+  }
+}
+window.deleteDayAsset = deleteDayAsset;
+
+/* ── day notes inline editor ── */
+function renderDayNoteList() {
+  const sel = document.getElementById('day-note-file');
+  const txts = (currentDay.loose?.notes || []).filter(n => n.toLowerCase().endsWith('.txt'));
+  let html = `<option value="">— pick a notes/*.txt —</option>`;
+  for (const fn of txts) html += `<option value="${escapeHTML(fn)}">${escapeHTML(fn)}</option>`;
+  sel.innerHTML = html;
+}
+
+function newDayNote() {
+  currentDayNoteFilename = null;
+  document.getElementById('f-note-fname').value = '';
+  document.getElementById('f-day-note').value = '';
+  document.getElementById('day-note-editor').classList.remove('hidden');
+  document.getElementById('day-note-file').value = '';
+  document.getElementById('f-note-fname').focus();
+}
+window.newDayNote = newDayNote;
+
+async function editDayNote(filename) {
+  setMode('day');
+  document.getElementById('day-note-file').value = filename;
+  await loadDayNoteFromSelect();
+}
+window.editDayNote = editDayNote;
+
+async function loadDayNoteFromSelect() {
+  const sel = document.getElementById('day-note-file');
+  const fn = sel.value;
+  if (!fn) {
+    document.getElementById('day-note-editor').classList.add('hidden');
+    currentDayNoteFilename = null;
+    return;
+  }
+  try {
+    const r = await apiJSON('GET', `/api/day-note/${currentDate}/${encodeURIComponent(fn)}`);
+    currentDayNoteFilename = fn;
+    document.getElementById('f-note-fname').value = fn;
+    document.getElementById('f-day-note').value = r.text || '';
+    document.getElementById('day-note-editor').classList.remove('hidden');
+  } catch (e) {
+    toast('load failed: ' + e.message, true);
+  }
+}
+window.loadDayNoteFromSelect = loadDayNoteFromSelect;
+
+function cancelDayNote() {
+  document.getElementById('day-note-editor').classList.add('hidden');
+  currentDayNoteFilename = null;
+}
+window.cancelDayNote = cancelDayNote;
+
+async function saveDayNote() {
+  let fname = document.getElementById('f-note-fname').value.trim();
+  if (!fname) { toast('filename required', true); return; }
+  if (!fname.toLowerCase().endsWith('.txt')) fname += '.txt';
+  if (!/^[A-Za-z0-9_\-. ]+$/.test(fname)) {
+    toast('filename: letters, digits, _ - . space only', true); return;
+  }
+  const text = document.getElementById('f-day-note').value;
+  try {
+    await apiJSON('PUT', `/api/day-note/${currentDate}/${encodeURIComponent(fname)}`, { text });
+    toast('saved: ' + fname);
+    currentDayNoteFilename = fname;
+    await loadDay();
+    document.getElementById('day-note-file').value = fname;
+    broadcastRefresh();
+  } catch (e) {
+    toast('save failed: ' + e.message, true);
+  }
+}
+window.saveDayNote = saveDayNote;
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+## EXAM TOPICS
+- MLE / MAP
+- Bayesian inference
+- Laplace approximation
+- Newton-Raphson
+- Beta-Binomial conjugacy
+
+## TODO
+[ ] redo Beta-Binomial worked example
+[x] HW11 pytest all green

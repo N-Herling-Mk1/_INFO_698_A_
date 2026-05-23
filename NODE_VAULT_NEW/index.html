@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODES // SYSTEM ACCESS</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --c:#00e5ff;--cd:rgba(0,229,255,0.22);--cg:rgba(0,229,255,0.08);
+  --o:#ff6d00;--og:rgba(255,109,0,0.15);
+  --bg:#000810;--bg2:#000d1a;--bg3:#001222;
+  --txt:#c8f0f8;--dim:#5ab8cc;--dim2:#1e5060;
+  --ok:#00ffb3;--fail:#ff3366;
+}
+body.ares{
+  --c:#ff2200;--cd:rgba(255,34,0,0.28);--cg:rgba(255,34,0,0.09);
+  --o:#ff7700;--og:rgba(255,119,0,0.18);
+  --bg:#080000;--bg2:#100000;--bg3:#160200;
+  --txt:#ffb89a;--dim:#d06040;--dim2:#5a1a08;
+  --ok:#ff6600;--fail:#ff0044;
+}
+body{background:var(--bg);color:var(--txt);font-family:'Share Tech Mono',monospace;
+  overflow:hidden;height:100vh;width:100vw;}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.12) 3px,rgba(0,0,0,0.12) 4px);
+  pointer-events:none;z-index:9999;}
+
+/* SCREENS */
+.scr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;transition:opacity .6s;}
+.scr.off{opacity:0;pointer-events:none;}
+.scr.gone{display:none;}
+
+/* ══ CORNER DECORATORS ══ */
+.cdec{position:fixed;width:56px;height:56px;pointer-events:none;z-index:30;}
+.cdec.tl{top:0;left:0;border-top:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.tr{top:0;right:0;border-top:2px solid var(--c);border-right:2px solid var(--c);}
+.cdec.bl{bottom:0;left:0;border-bottom:2px solid var(--c);border-left:2px solid var(--c);}
+.cdec.br{bottom:0;right:0;border-bottom:2px solid var(--c);border-right:2px solid var(--c);}
+
+/* ══ LOGIN ══ */
+#s-login{flex-direction:column;}
+#cv-bg{position:fixed;inset:0;z-index:0;}
+.login-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:24px;}
+.logo-block{text-align:center;}
+.logo-title{font-family:'Orbitron',monospace;font-size:3.8rem;font-weight:900;letter-spacing:.5em;
+  color:var(--c);text-shadow:0 0 30px var(--c),0 0 70px rgba(0,229,255,.25);}
+.logo-sub{font-size:.72rem;letter-spacing:.4em;color:var(--dim);margin-top:6px;}
+.pin-row{display:flex;gap:16px;}
+.pd{width:14px;height:14px;border:1.5px solid var(--dim2);border-radius:50%;transition:all .12s;}
+.pd.lit{background:var(--c);border-color:var(--c);box-shadow:0 0 14px var(--c);}
+.pd.err{background:var(--fail);border-color:var(--fail);box-shadow:0 0 14px var(--fail);}
+.hgrid{display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
+.hrow{display:flex;gap:7px;}
+.hrow.off{margin-left:52px;}
+.hw{position:relative;width:96px;height:108px;cursor:pointer;flex-shrink:0;}
+.hw::before{content:'';position:absolute;inset:0;
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:var(--dim2);transition:background .12s;}
+.hf{position:absolute;inset:0;margin:5%;
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background:var(--bg2);display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-weight:700;font-size:1.3rem;color:var(--c);
+  transition:all .12s;letter-spacing:.05em;}
+.hw:hover::before{background:var(--c);}
+.hw:hover .hf{color:#fff;text-shadow:0 0 12px var(--c);background:rgba(0,229,255,.14);}
+.hw:active .hf{background:rgba(0,229,255,.35);color:#fff;}
+.hw.act::before{background:var(--o);}
+.hw.act .hf{color:var(--o);}
+.hw.act:hover .hf{background:var(--o);color:#000;text-shadow:none;font-weight:900;}
+.pi-hint{font-size:.72rem;color:var(--dim);letter-spacing:.22em;text-align:center;}
+.theme-toggle{display:flex;border:1px solid var(--dim2);overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));}
+.tt-btn{padding:8px 28px;font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;
+  letter-spacing:.25em;cursor:pointer;border:none;background:transparent;color:var(--dim);transition:all .15s;}
+.tt-btn.on{background:var(--cd);color:var(--c);text-shadow:0 0 12px var(--c);}
+.tt-btn:hover:not(.on){color:var(--txt);background:rgba(255,255,255,.04);}
+
+/* ══ AUTH ══ */
+#s-auth{flex-direction:column;background:var(--bg);}
+#cv-auth{position:fixed;inset:0;z-index:0;}
+.auth-banner{position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;flex-direction:column;align-items:center;padding:28px 40px 0;}
+.auth-title{font-family:'Orbitron',monospace;font-size:1.45rem;font-weight:900;
+  letter-spacing:.45em;color:var(--c);text-shadow:0 0 24px var(--c),0 0 60px var(--cd);
+  text-align:center;white-space:nowrap;}
+.auth-subtitle{font-size:.68rem;letter-spacing:.5em;color:var(--dim);margin-top:6px;}
+.auth-prog-wrap{width:min(560px,80vw);margin-top:18px;display:flex;flex-direction:column;gap:6px;}
+.auth-prog-track{width:100%;height:4px;background:var(--dim2);position:relative;
+  clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));}
+.auth-prog-fill{height:100%;width:0%;background:var(--c);transition:width .1s linear;
+  box-shadow:0 0 10px var(--c),0 0 22px var(--cd);position:relative;}
+.auth-prog-fill::after{content:'';position:absolute;right:0;top:-3px;width:3px;height:10px;
+  background:#fff;box-shadow:0 0 8px var(--c);}
+.auth-prog-labels{display:flex;justify-content:space-between;font-size:.58rem;
+  letter-spacing:.22em;color:var(--dim);}
+.auth-hud{position:relative;z-index:10;text-align:center;display:flex;flex-direction:column;
+  align-items:center;gap:18px;}
+.pi-big{font-family:'Share Tech Mono',monospace;font-size:3.2rem;font-weight:900;color:var(--c);
+  text-shadow:0 0 36px var(--c);letter-spacing:.06em;width:480px;text-align:center;
+  font-variant-numeric:tabular-nums;}
+.pi-sides{font-size:.82rem;color:var(--dim);letter-spacing:.28em;}
+#auth-res{font-family:'Orbitron',monospace;font-size:2.4rem;font-weight:900;letter-spacing:.35em;
+  opacity:0;transition:opacity .4s;margin-top:8px;}
+#auth-res.ok{color:var(--ok);text-shadow:0 0 36px var(--ok);opacity:1;}
+#auth-res.fail{color:var(--fail);text-shadow:0 0 36px var(--fail);opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="cdec tl"></div><div class="cdec tr"></div>
+<div class="cdec bl"></div><div class="cdec br"></div>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="s-login" class="scr">
+  <canvas id="cv-bg"></canvas>
+  <div class="login-wrap">
+    <div class="logo-block">
+      <div class="logo-title">NODES</div>
+      <div class="logo-sub">SYSTEM ACCESS REQUIRED</div>
+    </div>
+    <div class="pin-row">
+      <div class="pd" id="pd0"></div><div class="pd" id="pd1"></div>
+      <div class="pd" id="pd2"></div><div class="pd" id="pd3"></div>
+    </div>
+    <div class="hgrid" id="hgrid"></div>
+    <div class="pi-hint" id="pi-hint">π ≈ 3.000000 &nbsp;|&nbsp; n = 3</div>
+    <div class="theme-toggle">
+      <button class="tt-btn on" id="tt-classic" onclick="setTheme('classic')">CLASSIC</button>
+      <button class="tt-btn"    id="tt-ares"    onclick="setTheme('ares')">ARES</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="s-auth" class="scr gone">
+  <canvas id="cv-auth"></canvas>
+  <div class="auth-banner">
+    <div class="auth-title">ARCHIMEDES VALIDATION PROTOCOL</div>
+    <div class="auth-subtitle">IDENTITY VERIFICATION IN PROGRESS</div>
+    <div class="auth-prog-wrap">
+      <div class="auth-prog-track">
+        <div class="auth-prog-fill" id="auth-prog"></div>
+      </div>
+      <div class="auth-prog-labels">
+        <span>INITIALIZING</span>
+        <span id="auth-prog-pct">0%</span>
+        <span>COMPLETE</span>
+      </div>
+    </div>
+  </div>
+  <div class="auth-hud">
+    <div class="pi-big"  id="pi-big">π ≈ 3.000000</div>
+    <div class="pi-sides" id="pi-sides">N = 3 SIDES</div>
+    <div id="auth-res"></div>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ════════════════════════════════
+const PIN = '3141';
+
+// ══ STATE ════════════════════════════════
+let currentTheme = sessionStorage.getItem('nodes_theme') || 'classic';
+let entered = '';
+let bgAnim, bgAngle = 0;
+
+// Apply saved theme immediately
+if (currentTheme === 'ares') document.body.classList.add('ares');
+document.getElementById('tt-classic').classList.toggle('on', currentTheme === 'classic');
+document.getElementById('tt-ares').classList.toggle('on', currentTheme === 'ares');
+
+// ══ THEME ════════════════════════════════
+function themeRGB() { return currentTheme==='ares' ? [255,34,0] : [0,229,255]; }
+function tc(a) { const [r,g,b]=themeRGB(); return `rgba(${r},${g},${b},${a})`; }
+
+function setTheme(t) {
+  currentTheme = t;
+  document.body.classList.toggle('ares', t === 'ares');
+  document.getElementById('tt-classic').classList.toggle('on', t === 'classic');
+  document.getElementById('tt-ares').classList.toggle('on', t === 'ares');
+  sessionStorage.setItem('nodes_theme', t);
+  startBgAnim();
+}
+
+// ══ HEX KEYPAD ═══════════════════════════
+const KEYS = [['1','2','3'],['4','5','6'],['7','8','9'],['CLR','0','ENT']];
+const grid = document.getElementById('hgrid');
+KEYS.forEach((row, ri) => {
+  const r = document.createElement('div');
+  r.className = 'hrow' + (ri % 2 === 1 ? ' off' : '');
+  row.forEach(k => {
+    const w = document.createElement('div');
+    w.className = 'hw' + (k==='CLR'||k==='ENT' ? ' act' : '');
+    w.innerHTML = `<div class="hf">${k}</div>`;
+    w.addEventListener('click', () => pressKey(k));
+    r.appendChild(w);
+  });
+  grid.appendChild(r);
+});
+
+function pressKey(k) {
+  if (k === 'CLR') { entered = ''; updateDots(); return; }
+  if (k === 'ENT') { if (entered.length === 4) doAuth(); return; }
+  if (entered.length >= 4) return;
+  entered += k;
+  updateDots();
+}
+
+function updateDots(state) {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('pd' + i);
+    d.className = 'pd';
+    if (state === 'err') d.classList.add('err');
+    else if (i < entered.length) d.classList.add('lit');
+  }
+}
+
+function doAuth() {
+  const correct = entered === PIN;
+  entered = '';
+  updateDots();
+  showAuth(correct);
+}
+
+// ══ AUTH ANIMATION ═══════════════════════
+function showAuth(correct) {
+  const sl = document.getElementById('s-login');
+  const sa = document.getElementById('s-auth');
+  sl.classList.add('off');
+  setTimeout(() => sl.classList.add('gone'), 600);
+  sa.classList.remove('gone');
+  requestAnimationFrame(() => sa.classList.remove('off'));
+  cancelAnimationFrame(bgAnim);
+
+  const cv  = document.getElementById('cv-auth');
+  const ctx = cv.getContext('2d');
+  cv.width  = window.innerWidth; cv.height = window.innerHeight;
+  const cx = cv.width/2, cy = cv.height/2;
+  const R  = Math.min(cx, cy) * 0.52;
+  const piEl    = document.getElementById('pi-big');
+  const sidesEl = document.getElementById('pi-sides');
+  const resEl   = document.getElementById('auth-res');
+  const barEl   = document.getElementById('auth-prog');
+  const pctEl   = document.getElementById('auth-prog-pct');
+  resEl.className = ''; resEl.textContent = '';
+  if (barEl) { barEl.style.width = '0%'; }
+  if (pctEl) { pctEl.textContent = '0%'; }
+
+  const N=6, STEP=10, TOTAL=36, INTERVAL=3000/TOTAL;
+  const off = document.createElement('canvas');
+  off.width = cv.width; off.height = cv.height;
+  const octx = off.getContext('2d');
+
+  function drawHex(c, rot, sa, fa) {
+    c.beginPath();
+    for (let i=0;i<N;i++){
+      const a=(i/N)*Math.PI*2+rot-Math.PI/2;
+      const x=cx+R*Math.cos(a), y=cy+R*Math.sin(a);
+      i===0?c.moveTo(x,y):c.lineTo(x,y);
+    }
+    c.closePath();
+    if (fa>0) { c.fillStyle=tc(fa); c.fill(); }
+    c.strokeStyle=tc(sa); c.lineWidth=1.2; c.stroke();
+  }
+
+  let hexesDrawn=0, startTime=null;
+
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    const target = Math.min(Math.floor((ts-startTime)/INTERVAL)+1, TOTAL);
+    while (hexesDrawn < target) {
+      drawHex(octx, hexesDrawn*(STEP*Math.PI/180), 0.22, 0.012);
+      hexesDrawn++;
+    }
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle=tc(0.12); ctx.lineWidth=1; ctx.stroke();
+    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.1);
+    grd.addColorStop(0, tc(0.04+hexesDrawn/TOTAL*0.06));
+    grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.drawImage(off,0,0);
+    if (hexesDrawn>0) {
+      const cr=(hexesDrawn-1)*(STEP*Math.PI/180);
+      drawHex(ctx, cr, 0.85, 0.06);
+      for (let i=0;i<N;i++) {
+        const a=(i/N)*Math.PI*2+cr-Math.PI/2;
+        const vx=cx+R*Math.cos(a), vy=cy+R*Math.sin(a);
+        const vg=ctx.createRadialGradient(vx,vy,0,vx,vy,9);
+        vg.addColorStop(0,tc(0.9)); vg.addColorStop(1,'transparent');
+        ctx.fillStyle=vg; ctx.beginPath(); ctx.arc(vx,vy,9,0,Math.PI*2); ctx.fill();
+      }
+    }
+    const eff = Math.max(N, N*hexesDrawn);
+    piEl.textContent    = 'π ≈ ' + (eff*Math.sin(Math.PI/eff)).toFixed(8);
+    sidesEl.textContent = `${hexesDrawn} HEXAGONS  ·  ${eff} EFF. SIDES`;
+    const pct = Math.round((hexesDrawn/TOTAL)*100);
+    if (barEl) barEl.style.width = pct + '%';
+    if (pctEl) pctEl.textContent = pct + '%';
+
+    if (hexesDrawn < TOTAL) {
+      requestAnimationFrame(step);
+    } else {
+      const fp=(N*TOTAL)*Math.sin(Math.PI/(N*TOTAL));
+      piEl.textContent='π ≈ '+fp.toFixed(8);
+      sidesEl.textContent='36 HEXAGONS  ·  216 EFF. SIDES';
+      if (barEl) barEl.style.width='100%';
+      if (pctEl) pctEl.textContent='100%';
+      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+      ctx.strokeStyle=tc(0.9); ctx.lineWidth=2.5; ctx.stroke();
+      setTimeout(() => {
+        resEl.textContent = correct ? '[ ACCESS GRANTED ]' : '[ ACCESS DENIED ]';
+        resEl.className   = correct ? 'ok' : 'fail';
+        if (correct) {
+          sessionStorage.setItem('nodes_auth','1');
+          setTimeout(() => {
+            // dual-server: Flask serves "/vault", file servers serve "vault.html"
+            const isFile = /\.html?$/i.test(location.pathname);
+            window.location.href = isFile ? 'vault.html' : '/vault';
+          }, 900);
+        } else {
+          setTimeout(() => backToLogin(), 1400);
+        }
+      }, 300);
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function backToLogin() {
+  const sa = document.getElementById('s-auth');
+  const sl = document.getElementById('s-login');
+  sa.classList.add('off');
+  setTimeout(() => sa.classList.add('gone'), 600);
+  sl.classList.remove('gone');
+  requestAnimationFrame(() => sl.classList.remove('off'));
+  updateDots('err');
+  setTimeout(() => { updateDots(); startBgAnim(); }, 800);
+  const barEl = document.getElementById('auth-prog');
+  const pctEl = document.getElementById('auth-prog-pct');
+  if (barEl) barEl.style.width = '0%';
+  if (pctEl) pctEl.textContent = '0%';
+}
+
+// ══ LOGIN BG CANVAS ══════════════════════
+function startBgAnim() {
+  cancelAnimationFrame(bgAnim);
+  const cv  = document.getElementById('cv-bg');
+  const ctx = cv.getContext('2d');
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const cx = cv.width/2, cy = cv.height/2;
+  const R  = Math.min(cx, cy) * 0.52;
+  bgAngle  = 0;
+  const piTri = 3*Math.sin(Math.PI/3);
+  document.getElementById('pi-hint').innerHTML = `π ≈ ${piTri.toFixed(6)} &nbsp;|&nbsp; n = 3`;
+
+  function draw() {
+    bgAngle += 0.004;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+    ctx.strokeStyle=tc(0.14); ctx.lineWidth=1.5; ctx.stroke();
+    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    grd.addColorStop(0,tc(0.07)); grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.beginPath();
+    for (let i=0;i<3;i++) {
+      const a=(i/3)*Math.PI*2+bgAngle-Math.PI/2;
+      const x=cx+R*Math.cos(a), y=cy+R*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = currentTheme==='ares' ? 'rgba(50,4,0,0.82)' : 'rgba(0,60,80,0.82)';
+    ctx.fill();
+    ctx.strokeStyle=tc(0.85); ctx.lineWidth=2; ctx.stroke();
+    for (let i=0;i<3;i++) {
+      const a=(i/3)*Math.PI*2+bgAngle-Math.PI/2;
+      const vx=cx+R*Math.cos(a), vy=cy+R*Math.sin(a);
+      const vg=ctx.createRadialGradient(vx,vy,0,vx,vy,12);
+      vg.addColorStop(0,tc(0.9)); vg.addColorStop(1,'transparent');
+      ctx.fillStyle=vg; ctx.beginPath(); ctx.arc(vx,vy,12,0,Math.PI*2); ctx.fill();
+    }
+    bgAnim = requestAnimationFrame(draw);
+  }
+  bgAnim = requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', () => {
+  const cv = document.getElementById('cv-bg');
+  if (cv) { cv.width=window.innerWidth; cv.height=window.innerHeight; }
+});
+
+// ══ BOOT ══════════════════════════════════
+startBgAnim();
+</script>
+</body>
+</html>

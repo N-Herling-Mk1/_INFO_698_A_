@@ -1,0 +1,15 @@
+## ROUND 2 PLAN
+P0 = max-score estimator
+P1 = crossval_all_layers.py  ← CENTERPIECE
+P2 = diagnostics aggregator
+P3 = tokenization variants on mk_6
+P4 = ensemble
+P5 = final submission
+
+## STATUS
+[x] P0 implemented
+[x] P1 sigma_fold populated
+[ ] P2 RRM/MaxEnt signals on mk_2/5/6/7
+[ ] P3 sarcasm ZZPRAG variants
+[ ] P4 ensemble target
+[ ] P5 submission pick

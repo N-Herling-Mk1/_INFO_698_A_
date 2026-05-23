@@ -1,0 +1,24 @@
+## CAPSTONE MEETING 1 — FRI MAY 22 2026
+Prof. is an ecologist. Highly motivated.
+Companion: VStudio Code Python app.
+
+## STUDENTS PRESENTED
+- Trevor Abshire ("the baseball guy") — bone density, blood comp, sprint speed
+  (Dr. Valerdi, SIE)
+- Vinay — Debit / day trading
+
+## DELIVERABLES
+- Git repo with code/etc
+- Be comfortable with data sharing
+- Research paper OR software (or both)
+
+## RESEARCH BAR
+- Shouldn't be overlap problem if from scratch
+- "Research is bricks"
+- A live document
+
+## TODO
+[ ] choose research direction
+[ ] update LinkedIn profile / CV → GitHub repo
+[ ] QR + fill out forms
+[x] update CV

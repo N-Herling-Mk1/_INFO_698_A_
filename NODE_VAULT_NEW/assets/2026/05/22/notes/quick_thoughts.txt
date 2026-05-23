@@ -1,0 +1,7 @@
+## QUICK THOUGHTS
+- CRUCIBLE could leverage InfoNCE per-stage Z
+- thermo framing from Jaynes 1957 fits naturally
+
+## NEXT WEEK
+[ ] sketch CRF forward-backward on paper
+[ ] ping Johns re: CSV delivery
